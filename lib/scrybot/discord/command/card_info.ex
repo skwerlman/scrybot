@@ -132,7 +132,6 @@ defmodule Scrybot.Discord.Command.CardInfo do
     case {legal_group_1, legal_group_1} do
       {"", ""} ->
         embed
-        |> Embed.put_field("Legal in", "- nothing", true)
 
       {_, ""} ->
         embed
