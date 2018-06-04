@@ -129,7 +129,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
       |> Enum.take_every(2)
       |> Enum.join("\n")
 
-    case {legal_group_1, legal_group_1} do
+    case {legal_group_1, legal_group_2} do
       {"", ""} ->
         embed
 
