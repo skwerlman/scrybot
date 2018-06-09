@@ -27,6 +27,8 @@ defmodule Scrybot.MixProject do
       {:jason, "~> 1.0"},
       {:named_args, "~> 0.1"},
       {:tesla, "~> 1.0"},
+      {:flex_logger, "~> 0.2"},
+      {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 1.5", runtime: false}
     ]
   end

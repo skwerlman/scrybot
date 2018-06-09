@@ -30,4 +30,25 @@ use Mix.Config
 config :scrybot,
   workers: 2
 
+config :logger,
+  backends: [
+    {FlexLogger, :file_logger},
+    {FlexLogger, :default_logger}
+  ]
+
+config :logger, :file_logger,
+  logger: LoggerFileBackend,
+  default_level: :debug,
+  level_config: [],
+  format: "$time [$level]$levelpad $message\n",
+  path: "log/scrybot.log"
+
+config :logger, :default_logger,
+  logger: :console,
+  default_level: :info,
+  level_config: [
+    [application: :scrybot, module: Scrybot, level: :debug]
+  ],
+  format: "$time [$level]$levelpad $message\n"
+
 import_config "config.secret.exs"
