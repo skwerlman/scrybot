@@ -24,3 +24,6 @@ scrybot-*.tar
 
 # Ignore bot secrets
 *.secret.exs
+
+# Ignore distillery configs
+/rel/
