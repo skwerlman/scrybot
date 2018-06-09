@@ -20,7 +20,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     {embed, info} =
       case cap do
         nil ->
-          nil
+          {nil, nil}
 
         _ ->
           cap["card_name"]

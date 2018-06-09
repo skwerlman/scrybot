@@ -17,5 +17,5 @@ defmodule Scrybot.Discord.Worker do
     :ok
   end
 
-  def handle_event(_), do: :ok
+  def handle_event(_), do: :noop
 end

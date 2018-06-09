@@ -11,7 +11,7 @@ defmodule Scrybot.Scryfall.Api do
   plug(Tesla.Middleware.Retry, delay: 125, max_retries: 3)
   plug(Tesla.Middleware.DecodeJson)
 
-  defp handle_errors(resp) do
+  defp handle_errors({:ok, resp}) do
     case resp.body["object"] do
       "error" ->
         b = resp.body

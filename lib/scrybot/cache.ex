@@ -3,11 +3,15 @@ defmodule Scrybot.Cache do
   @cacheid Scrybot.Cache.ScryfallCache
   use Supervisor
 
+  @spec start_link(term()) :: Supervisor.on_start()
   def start_link(_) do
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def init(:ok) do
+  @spec init(term()) ::
+          {:ok, {:supervisor.sup_flags(), [:supervisor.child_spec()]}}
+          | :ignore
+  def init(_) do
     children = [
       {ConCache,
        [
@@ -37,11 +41,11 @@ defmodule Scrybot.Cache.Middleware do
         Logger.warn("hitting the real api: #{inspect({env.url, env.query})}")
         {:ok, result} = Tesla.run(env, next)
         ConCache.put(@cacheid, {env.url, env.query}, result.body)
-        result
+        {:ok, result}
 
       cached ->
         Logger.warn("url was cached")
-        %{env | body: cached}
+        {:ok, %{env | body: cached}}
     end
   end
 end
