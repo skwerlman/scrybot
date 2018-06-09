@@ -4,7 +4,7 @@ defmodule Scrybot.Discord.Command.Core do
   alias Nostrum.Api
 
   def init do
-    Logger.info("CardInfo command set loaded")
+    Logger.info("Core command set loaded")
   end
 
   def do_command(message) do
