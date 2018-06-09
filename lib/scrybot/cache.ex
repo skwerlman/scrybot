@@ -40,7 +40,15 @@ defmodule Scrybot.Cache.Middleware do
       nil ->
         Logger.warn("hitting the real api: #{inspect({env.url, env.query})}")
         {:ok, result} = Tesla.run(env, next)
-        ConCache.put(@cacheid, {env.url, env.query}, result.body)
+
+        case result do
+          %{status: status} when status in 200..299 ->
+            ConCache.put(@cacheid, {env.url, env.query}, result.body)
+
+          %{status: status} ->
+            Logger.warn("not caching: status #{inspect(status)}")
+        end
+
         {:ok, result}
 
       cached ->
