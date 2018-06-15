@@ -11,19 +11,19 @@ defmodule Scrybot.Discord.Command do
   end
 
   defp init_once(module) do
-    # Task.start(fn ->
-    try do
-      module.init()
-    rescue
-      FunctionClauseError -> :ignore
-      e -> Logger.error(inspect(e))
-    end
-
-    # end)
+    Task.start(fn ->
+      try do
+        module.init()
+      rescue
+        e ->
+          Logger.warn("Failed to initialize command module: #{inspect(module)}")
+          Logger.warn(Exception.format(:error, e, :erlang.get_stacktrace()))
+      end
+    end)
   end
 
   def do_command(module, message) do
-    # Task.start(fn ->
+    Task.start(fn ->
       try do
         case message do
           m = %{bot: true} ->
@@ -42,9 +42,9 @@ defmodule Scrybot.Discord.Command do
               Logger.error("Command execution failed for: #{inspect(message)}")
           end
 
-    # end)
           Logger.error(Exception.format(:error, e, :erlang.get_stacktrace()))
       end
+    end)
   end
 
   def init do
