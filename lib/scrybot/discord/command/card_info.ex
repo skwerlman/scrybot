@@ -10,6 +10,8 @@ defmodule Scrybot.Discord.Command.CardInfo do
     Logger.info("CardInfo command set loaded")
   end
 
+  def allow_bots?, do: false
+
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
     cap =
       Regex.named_captures(

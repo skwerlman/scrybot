@@ -24,14 +24,27 @@ defmodule Scrybot.Discord.Command do
 
   def do_command(module, message) do
     # Task.start(fn ->
-    try do
-      module.do_command(message)
-    rescue
-      FunctionClauseError -> :ignore
-      e -> Logger.error(inspect(e))
-    end
+      try do
+        case message do
+          m = %{bot: true} ->
+            module.allow_bots?() && module.do_command(m)
+
+          m ->
+            module.do_command(m)
+        end
+      rescue
+        e ->
+          case message do
+            %Nostrum.Struct.Message{} ->
+              Logger.error("Command execution failed for: #{inspect(message.content)}")
+
+            _ ->
+              Logger.error("Command execution failed for: #{inspect(message)}")
+          end
 
     # end)
+          Logger.error(Exception.format(:error, e, :erlang.get_stacktrace()))
+      end
   end
 
   def init do

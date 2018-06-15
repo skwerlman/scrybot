@@ -7,6 +7,8 @@ defmodule Scrybot.Discord.Command.Core do
     Logger.info("Core command set loaded")
   end
 
+  def allow_bots?, do: false
+
   def do_command(message) do
     IO.puts(message.author.id)
 
