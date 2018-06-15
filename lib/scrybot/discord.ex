@@ -5,7 +5,6 @@ defmodule Scrybot.Discord do
   alias Scrybot.Discord.Command
 
   def start_link(_) do
-    Logger.info("start")
     Command.init()
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -29,7 +28,6 @@ defmodule Scrybot.Discord do
   end
 
   def init(:ok) do
-    Logger.info("init")
     opts = [strategy: :one_for_one, name: Scrybot.Discord.Supervisor]
     Supervisor.init(children(), opts)
   end

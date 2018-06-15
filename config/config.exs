@@ -40,7 +40,8 @@ config :logger, :file_logger,
   logger: LoggerFileBackend,
   default_level: :debug,
   level_config: [],
-  format: "$time [$level]$levelpad $message\n",
+  metadata: [:application, :module, :function],
+  format: "$time $metadata[$level]$levelpad $message\n",
   path: "log/scrybot.log"
 
 config :logger, :default_logger,
