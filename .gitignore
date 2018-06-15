@@ -27,3 +27,6 @@ scrybot-*.tar
 
 # Ignore distillery configs
 /rel/
+
+# Ignore logs
+/log/
