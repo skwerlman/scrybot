@@ -96,11 +96,11 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp build_card_embed(card_info) do
     %Embed{}
-    |> Embed.put_title(
-      md_escape(card_info["name"]) <> " " <> Emoji.emojify(card_info["mana_cost"])
-    )
+    |> Embed.put_title(md_escape(card_info["name"]))
     |> Embed.put_url(card_info["scryfall_uri"])
-    |> Embed.put_description(format_description(card_info))
+    |> Embed.put_description(
+      Emoji.emojify(card_info["mana_cost"] <> "\n" <> format_description(card_info))
+    )
     |> put_legalities(card_info["legalities"])
     |> Embed.put_image(card_info["image_uris"]["art_crop"])
   end
