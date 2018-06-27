@@ -26,8 +26,10 @@ defmodule Scrybot.Discord.Command do
     Task.start(fn ->
       try do
         case message do
-          m = %{bot: true} ->
-            module.allow_bots?() && module.do_command(m)
+          m = %{author: %{bot: true}} ->
+            if module.allow_bots?() do
+              module.do_command(m)
+            end
 
           m ->
             module.do_command(m)
