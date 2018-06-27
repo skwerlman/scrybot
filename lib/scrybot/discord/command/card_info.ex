@@ -1,6 +1,7 @@
 defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
   require Logger
+  alias Nostrum.Api
   alias Nostrum.Struct.Embed
   alias Nostrum.Struct.Message
   alias Nostrum.Struct.User
@@ -11,6 +12,11 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   def allow_bots?, do: false
+
+  def do_command(%Message{author: %User{bot: bot}, content: "[[quack]]"} = message)
+      when bot in [false, nil] do
+    Api.create_message(message.channel_id, content: ":duck:")
+  end
 
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
     cap =
@@ -75,7 +81,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
           "https://pbs.twimg.com/profile_images/786276514400702464/7k4AEH78_400x400.jpg"
         )
 
-      case Nostrum.Api.create_message(message.channel_id, embed: ruling_embed) do
+      case Api.create_message(message.channel_id, embed: ruling_embed) do
         {:ok, _} ->
           :ok
 
