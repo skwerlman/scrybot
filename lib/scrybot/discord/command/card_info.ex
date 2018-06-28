@@ -78,7 +78,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
           #   10000 -> "data forcefully ripped from the cold, dead hands of Scryfall"
           # end,
           "data sourced from Scryfall",
-          "https://pbs.twimg.com/profile_images/786276514400702464/7k4AEH78_400x400.jpg"
+          "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
         )
 
       case Api.create_message(message.channel_id, embed: ruling_embed) do
