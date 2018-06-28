@@ -196,7 +196,6 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp get_rulings(cardid) do
-    Process.sleep(125)
     Scrybot.Scryfall.Api.rulings(cardid)
   end
 

@@ -6,7 +6,10 @@ defmodule Scrybot.Discord.Command do
     Application.get_env(
       :scrybot,
       :command_handlers,
-      [Scrybot.Discord.Command.CardInfo, Scrybot.Discord.Command.Core]
+      [
+        Scrybot.Discord.Command.CardInfo,
+        Scrybot.Discord.Command.Core
+      ]
     )
   end
 

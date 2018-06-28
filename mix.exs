@@ -26,6 +26,8 @@ defmodule Scrybot.MixProject do
       {:con_cache, "~> 0.13"},
       {:jason, "~> 1.0"},
       {:named_args, "~> 0.1"},
+      {:opq, "~> 3.0"},
+      {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.0"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},

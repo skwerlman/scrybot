@@ -3,9 +3,13 @@ defmodule Scrybot.Application do
   # for more information on OTP Applications
   @moduledoc false
 
+  alias Scrybot.Scryfall.Api
   use Application
 
   def start(_type, _args) do
+    # Initialize the scryfall ratelimiter
+    Api.setup()
+
     # List all child processes to be supervised
     children = [
       Scrybot.Cache,
