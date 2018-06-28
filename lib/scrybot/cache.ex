@@ -38,7 +38,7 @@ defmodule Scrybot.Cache.Middleware do
   def call(env, next, _options) do
     case ConCache.get(@cacheid, {env.url, env.query}) do
       nil ->
-        Logger.warn("hitting the real api: #{inspect({env.url, env.query})}")
+        Logger.info("hitting the real api: #{inspect({env.url, env.query})}")
         {:ok, result} = Tesla.run(env, next)
 
         case result do
@@ -52,7 +52,7 @@ defmodule Scrybot.Cache.Middleware do
         {:ok, result}
 
       cached ->
-        Logger.warn("url was cached")
+        Logger.debug("url was cached")
         {:ok, %{env | body: cached}}
     end
   end
