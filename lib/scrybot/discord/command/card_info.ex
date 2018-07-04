@@ -35,7 +35,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     # This is synchronous to avoid split responses being out-of-order
     |> Enum.each(fn x -> handle_card(x, message) end)
 
-    ~r/(?:\[e\[(.*?)\]\])/
+    ~r/(?:\[=\[(.*?)\]\])/
     |> Regex.scan(message.content)
     |> Stream.map(fn [_ | [x | _]] -> x end)
     |> Stream.reject(fn x -> x == [] end)
