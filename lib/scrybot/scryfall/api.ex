@@ -133,4 +133,10 @@ defmodule Scrybot.Scryfall.Api do
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
+
+  def autocomplete(partial) do
+    query = [q: partial]
+    res = ratelimited_get("/cards/autocomplete", query: query)
+    res |> handle_errors()
+  end
 end
