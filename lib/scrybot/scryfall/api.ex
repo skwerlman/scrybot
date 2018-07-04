@@ -3,6 +3,7 @@ defmodule Scrybot.Scryfall.Api do
   @scryfall_uri "https://api.scryfall.com"
   use Tesla
   alias Nostrum.Struct.Embed
+  alias Scrybot.Discord.Colors
   require Logger
 
   plug(Scrybot.Cache.Middleware)
@@ -86,7 +87,7 @@ defmodule Scrybot.Scryfall.Api do
 
         reason =
           %Embed{}
-          |> Embed.put_color(0xE74C3C)
+          |> Embed.put_color(Colors.error())
           |> Embed.put_title("Error!")
           |> Embed.put_description(b["details"])
           |> Embed.put_footer("#{status} #{code}#{type}", nil)
