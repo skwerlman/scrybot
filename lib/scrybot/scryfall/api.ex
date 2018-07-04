@@ -84,11 +84,33 @@ defmodule Scrybot.Scryfall.Api do
           |> Embed.put_description(b["details"])
           |> Embed.put_footer("#{status} #{code}#{type}", nil)
 
-        {:error, reason}
+        {:error, reason, b["type"]}
 
       _ ->
         {:ok, resp}
     end
+  end
+
+  defp handle_errors({:error, status}) do
+    reason =
+      %Embed{}
+      |> Embed.put_color(Colors.error())
+      |> Embed.put_title("Scryfall API error!")
+      |> Embed.put_description(
+        case status do
+          :econnrefused ->
+            "Connection refused!"
+
+          :timeout ->
+            "Connection timed out!"
+
+          _ ->
+            "Unknown error!"
+        end
+      )
+      |> Embed.put_footer("#{status}", nil)
+
+    {:error, reason}
   end
 
   def cards_named(card_name, use_exact) do
