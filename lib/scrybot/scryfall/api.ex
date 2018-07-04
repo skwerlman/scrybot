@@ -44,14 +44,7 @@ defmodule Scrybot.Scryfall.Api do
   def ratelimited_get(url, query) do
     [{:opq, opq}] = :ets.lookup(:scryfall_queue_data, :opq)
 
-    request_key =
-      UUID.uuid5(
-        :url,
-        url <>
-          inspect(query) <>
-          "#{Enum.random(0x0000000000000000..0xFFFFFFFFFFFFFFFF)}" <>
-          "#{System.system_time(:nanosecond)}"
-      )
+    request_key = UUID.uuid4()
 
     :ets.insert(:scryfall_queue_data, {{request_key, :status}, :queued})
 
@@ -75,7 +68,6 @@ defmodule Scrybot.Scryfall.Api do
     case resp.body["object"] do
       "error" ->
         b = resp.body
-        Logger.debug(inspect(b))
         code = b["code"]
         status = b["status"]
 
