@@ -33,48 +33,27 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Stream.uniq()
     # Finally, we run handle_card on each of the cards
     # This is synchronous to avoid split responses being out-of-order
-    |> Enum.each(fn x -> handle_card(x, message) end)
+    |> Enum.each(fn x -> handle_card(x, message, false) end)
 
     ~r/(?:\[=\[(.*?)\]\])/
     |> Regex.scan(message.content)
     |> Stream.map(fn [_ | [x | _]] -> x end)
     |> Stream.reject(fn x -> x == [] end)
     |> Stream.uniq()
-    |> Enum.each(fn x -> handle_exact_card(x, message) end)
+    |> Enum.each(fn x -> handle_card(x, message, true) end)
   end
 
-  defp handle_exact_card(card_name, ctx) do
+  defp handle_card(card_name, ctx, exact) do
     card_info =
-      card_name
-      |> get_exact_card_info()
+      case exact do
+        false ->
+          card_name
+          |> get_card_info()
 
-    case card_info do
-      {:ok, info} ->
-        rulings =
-          case get_rulings(info.body["id"]) do
-            {:ok, %{body: resp}} -> resp["data"]
-            {:error, reason} -> notify_error(reason, ctx.channel_id)
-          end
-
-        return_card(info, rulings, ctx)
-
-      {:error, _, "ambiguous"} ->
-        card_name
-        |> get_alternate_cards()
-        |> return_alternate_cards(card_name, ctx)
-
-      {:error, message, _} ->
-        return_error(message, ctx)
-
-      {:error, message} ->
-        return_error(message, ctx)
-    end
-  end
-
-  defp handle_card(card_name, ctx) do
-    card_info =
-      card_name
-      |> get_card_info()
+        true ->
+          card_name
+          |> get_exact_card_info()
+      end
 
     case card_info do
       {:ok, info} ->
