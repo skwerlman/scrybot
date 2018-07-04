@@ -24,7 +24,7 @@ defmodule Scrybot.MixProject do
     [
       {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
       {:con_cache, "~> 0.13"},
-      {:jason, "~> 1.0"},
+      {:jason, "~> 1.1"},
       {:named_args, "~> 0.1"},
       {:opq, "~> 3.0"},
       {:elixir_uuid, "~> 1.2"},
