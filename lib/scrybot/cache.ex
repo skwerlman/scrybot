@@ -39,17 +39,21 @@ defmodule Scrybot.Cache.Middleware do
     case ConCache.get(@cacheid, {env.url, env.query}) do
       nil ->
         Logger.info("hitting the real api: #{inspect({env.url, env.query})}")
-        {:ok, result} = Tesla.run(env, next)
+        {status, result} = Tesla.run(env, next)
 
-        case result do
-          %{status: status} when status in 200..299 ->
-            ConCache.put(@cacheid, {env.url, env.query}, result.body)
+        if status == :ok do
+          case result do
+            %{status: status} when status in 200..299 ->
+              ConCache.put(@cacheid, {env.url, env.query}, result.body)
 
-          %{status: status} ->
-            Logger.warn("not caching: status #{inspect(status)}")
+            %{status: status} ->
+              Logger.warn("not caching: status #{inspect(status)}")
+          end
+
+          {:ok, result}
+        else
+          {:error, result}
         end
-
-        {:ok, result}
 
       cached ->
         Logger.debug("url was cached")
