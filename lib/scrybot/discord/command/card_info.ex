@@ -209,13 +209,15 @@ defmodule Scrybot.Discord.Command.CardInfo do
         :ok
 
       face ->
-        return_card(face, rulings, ctx)
+        return_card(Map.merge(body, face), rulings, ctx)
     end
   end
 
-  defp return_card(card_info, rulings, ctx) do
-    info = card_info.body
+  defp return_card(%{body: info}, rulings, ctx) do
+    return_card(info, rulings, ctx)
+  end
 
+  defp return_card(info, rulings, ctx) do
     embeds =
       case fits_limits?(info, rulings) do
         true ->
