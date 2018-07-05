@@ -228,7 +228,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
               Emoji.emojify(info["mana_cost"] <> "\n" <> format_description(info))
             )
             |> put_legalities(info["legalities"])
-            |> Embed.put_thumbnail(info["image_uris"]["small"]),
+            |> Embed.put_thumbnail(info["image_uris"]["normal"]),
             %Embed{}
             |> put_rulings(rulings)
             |> Embed.put_footer(

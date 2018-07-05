@@ -14,7 +14,7 @@
   "mime": {:hex, :mime, "1.3.0", "5e8d45a39e95c650900d03f897fbf99ae04f60ab1daa4a34c7a20a5151b7a5fe", [:mix], [], "hexpm"},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], [], "hexpm"},
   "named_args": {:hex, :named_args, "0.1.1", "aef3e050b83ee298e7b3247c6a90e6a8431a716761a46ce11064a0496f9adf9e", [:mix], [], "hexpm"},
-  "nostrum": {:git, "https://github.com/Kraigie/nostrum.git", "c1fb5c55b459a91720d1b24f0dcf6eef2cb41be7", []},
+  "nostrum": {:git, "https://github.com/Kraigie/nostrum.git", "3490e7138634de238527523f7bcb50e956fed1cd", []},
   "opq": {:hex, :opq, "3.0.1", "31298fb57140bedb2949b75996c411cd9cec6ba89f33b1f8c4f656b6f8719b38", [:mix], [{:gen_stage, "~> 0.12", [hex: :gen_stage, repo: "hexpm", optional: false]}], "hexpm"},
   "parse_trans": {:hex, :parse_trans, "3.2.0", "2adfa4daf80c14dc36f522cf190eb5c4ee3e28008fc6394397c16f62a26258c2", [:rebar3], [], "hexpm"},
   "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], [], "hexpm"},
