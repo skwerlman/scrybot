@@ -1,5 +1,6 @@
 defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
+  @scryfall_icon_uri "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
   require Logger
   alias Nostrum.Api
   alias Nostrum.Struct.Embed
@@ -172,6 +173,13 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
+  defp footer do
+    case Enum.random(1..5000) do
+      x when x in 1..4999 -> "data sourced from Scryfall"
+      5000 -> "data forcefully ripped from the cold, dead hands of Scryfall"
+    end
+  end
+
   defp return_card(%{body: %{"layout" => layout} = body}, rulings, ctx)
        when layout in ["split", "flip", "transform", "double_faced_token"] do
     [last_face | faces] = body["card_faces"] |> Enum.reverse()
@@ -210,13 +218,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
             |> put_legalities(info["legalities"])
             |> Embed.put_thumbnail(info["image_uris"]["small"])
             |> put_rulings(rulings)
-            |> Embed.put_footer(
-              case Enum.random(1..5000) do
-                x when x in 1..4999 -> "data sourced from Scryfall"
-                5000 -> "data forcefully ripped from the cold, dead hands of Scryfall"
-              end,
-              "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
-            )
+            |> Embed.put_footer(footer(), @scryfall_icon_uri)
           ]
 
         false ->
@@ -231,13 +233,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
             |> Embed.put_thumbnail(info["image_uris"]["normal"]),
             %Embed{}
             |> put_rulings(rulings)
-            |> Embed.put_footer(
-              case Enum.random(1..5000) do
-                x when x in 1..4999 -> "data sourced from Scryfall"
-                5000 -> "data forcefully ripped from the cold, dead hands of Scryfall"
-              end,
-              "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
-            )
+            |> Embed.put_footer(footer(), @scryfall_icon_uri)
           ]
       end
 
