@@ -1,5 +1,7 @@
 defmodule Scrybot.Discord.Colors do
-  @moduledoc false
+  @moduledoc """
+  A collection of nice status colors to be applied to discord embeds.
+  """
 
   def error do
     0xE74C3C
