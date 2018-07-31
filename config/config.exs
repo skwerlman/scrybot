@@ -48,7 +48,9 @@ config :logger, :default_logger,
   logger: :console,
   default_level: :info,
   level_config: [
-    [application: :scrybot, module: Scrybot, level: :debug]
+    [application: :scrybot, module: Scrybot, level: :debug],
+    [application: :nostrum, module: Nostrum, level: :warn],
+    [application: :nostrum, module: Nostrum.Api.Ratelimiter, level: :info]
   ],
   format: "$time [$level]$levelpad $message\n"
 
