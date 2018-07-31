@@ -3,11 +3,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @scryfall_icon_uri "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
   require Logger
   alias Nostrum.Api
-  alias Nostrum.Struct.Embed
-  alias Nostrum.Struct.Message
-  alias Nostrum.Struct.User
-  alias Scrybot.Discord.Colors
-  alias Scrybot.Discord.Emoji
+  alias Nostrum.Struct.{Embed, Message, User}
+  alias Scrybot.Discord.{Colors, Emoji}
+  alias Scrybot.Scryfall
 
   @doc false
   def init do
@@ -36,6 +34,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     # This is synchronous to avoid split responses being out-of-order
     |> Enum.each(fn x -> handle_card(x, message, false) end)
 
+    # Same as above, but handles exact-match [=[]]
     ~r/(?:\[=\[(.*?)\]\])/
     |> Regex.scan(message.content)
     |> Stream.map(fn [_ | [x | _]] -> x end)
@@ -269,23 +268,23 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp get_alternate_cards(card_name) do
-    Scrybot.Scryfall.Api.autocomplete(card_name)
+    Scryfall.Api.autocomplete(card_name)
   end
 
   defp get_exact_card_info(card_name) do
-    Scrybot.Scryfall.Api.cards_named(card_name, true)
+    Scryfall.Api.cards_named(card_name, true)
   end
 
   defp get_card_info(card_name) do
-    Scrybot.Scryfall.Api.cards_named(card_name, false)
+    Scryfall.Api.cards_named(card_name, false)
   end
 
   defp get_rulings(cardid) do
-    Scrybot.Scryfall.Api.rulings(cardid)
+    Scryfall.Api.rulings(cardid)
   end
 
   defp notify_error(reason, channel) do
     Logger.error(inspect(reason))
-    Nostrum.Api.create_message(channel, embed: reason)
+    Api.create_message(channel, embed: reason)
   end
 end
