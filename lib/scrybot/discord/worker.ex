@@ -17,5 +17,23 @@ defmodule Scrybot.Discord.Worker do
     :ok
   end
 
-  def handle_event(_), do: :noop
+  def handle_event({:MESSAGE_REACTION_ADD, {reaction}, _ws}) do
+    react_handlers = Command.react_handlers()
+
+    react_handlers
+    |> Enum.each(&Command.do_reaction_command(&1, :add, reaction))
+
+    :ok
+  end
+
+  def handle_event({:MESSAGE_REACTION_REMOVE, {reaction}, _ws}) do
+    react_handlers = Command.react_handlers()
+
+    react_handlers
+    |> Enum.each(&Command.do_reaction_command(&1, :remove, reaction))
+
+    :ok
+  end
+
+  def handle_event(_), do: :ok
 end

@@ -13,6 +13,16 @@ defmodule Scrybot.Discord.Command do
     )
   end
 
+  def react_handlers do
+    Application.get_env(
+      :scrybot,
+      :react_handlers,
+      [
+        Scrybot.Discord.Command.Turtler3000
+      ]
+    )
+  end
+
   defp init_once(module) do
     Task.start(fn ->
       try do
@@ -52,8 +62,23 @@ defmodule Scrybot.Discord.Command do
     end)
   end
 
+  def do_reaction_command(module, mode, reaction) do
+    Task.start(fn ->
+      try do
+        module.do_reaction_command(mode, reaction)
+      rescue
+        e ->
+          Logger.error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
+
+          Logger.error(Exception.format(:error, e, :erlang.get_stacktrace()))
+      end
+    end)
+  end
+
   def init do
-    handlers()
+    [handlers(), react_handlers()]
+    |> Stream.concat()
+    |> Stream.uniq()
     |> Enum.each(&init_once(&1))
   end
 end
