@@ -2,7 +2,6 @@ defmodule Scrybot.Discord.Command.Turtler3000 do
   @moduledoc false
   alias Nostrum.Api
   alias Nostrum.Cache.Me
-  alias Nostrum.Struct.Emoji
   require Logger
 
   def init do
