@@ -35,4 +35,6 @@ defmodule Scrybot.Discord.Command.Turtler3000 do
       Api.delete_own_reaction(channel_id, message_id, emoji)
     end
   end
+
+  def do_reaction_command(_mode, _reaction), do: :ok
 end
