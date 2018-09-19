@@ -13,7 +13,6 @@ defmodule Scrybot.Scryfall.Api do
   plug(Tesla.Middleware.DecodeJson)
 
   def setup do
-    :ets.new(:scryfall_queue, [:set, :protected])
     :ets.new(:scryfall_queue_data, [:set, :public, :named_table])
     {:ok, opq} = OPQ.init(workers: 1, interval: 60, timeout: 60_000)
     :ets.insert(:scryfall_queue_data, {:opq, opq})
