@@ -3,16 +3,30 @@ defmodule Scrybot do
   Documentation for Scrybot.
   """
 
-  @doc """
-  Hello world.
+  @version Mix.Project.config()[:version]
+  @deps Mix.Project.config()[:deps]
 
-  ## Examples
+  def deps do
+    @deps
+    |> Enum.map(fn x ->
+      case x do
+        {app} -> app
+        {app, _} -> app
+        {app, _, _} -> app
+      end
+    end)
+  end
 
-      iex> Scrybot.hello
-      :world
+  def version do
+    @version
+  end
 
-  """
-  def hello do
-    :world
+  def version(app) do
+    resp = :application.get_key(app, :vsn)
+
+    case resp do
+      {:ok, vsn} -> vsn
+      _ -> "unknown"
+    end
   end
 end

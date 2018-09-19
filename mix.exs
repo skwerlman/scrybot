@@ -4,7 +4,7 @@ defmodule Scrybot.MixProject do
   def project do
     [
       app: :scrybot,
-      version: "0.2.3",
+      version: "0.2.4",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -25,7 +25,6 @@ defmodule Scrybot.MixProject do
       {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
       {:con_cache, "~> 0.13"},
       {:jason, "~> 1.1"},
-      {:named_args, "~> 0.1"},
       {:opq, "~> 3.0"},
       {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.0"},

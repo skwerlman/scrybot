@@ -25,9 +25,7 @@ defmodule Scrybot.Discord.Command.Turtler3000 do
     {:ok, users} = Api.get_reactions(channel_id, message_id, emoji)
 
     # Get a list of user IDs for the people who reacted
-    ids =
-      users
-      |> Enum.map(fn x -> x.id end)
+    ids = users |> Enum.map(fn x -> x.id end)
 
     # If we aren't in the list (i.e. we haven't reacted yet)
     if my_id not in ids do
@@ -54,9 +52,7 @@ defmodule Scrybot.Discord.Command.Turtler3000 do
     me = Me.get()
     {:ok, users} = Api.get_reactions(channel_id, message_id, emoji)
 
-    count =
-      users
-      |> Enum.count()
+    count = users |> Enum.count()
 
     if count == 1 and List.first(users).id == me.id do
       Api.delete_own_reaction(channel_id, message_id, emoji)
