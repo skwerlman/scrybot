@@ -32,15 +32,15 @@ defmodule Scrybot.Discord.Command.Turtler3000 do
       # Add a reaction to the message
       Api.create_reaction(channel_id, message_id, emoji)
 
-      # Get the ID of the person who posted the message
-      {:ok, %Message{author: %User{id: user_id}}} =
-        Api.get_channel_message(channel_id, message_id)
-
-      # Open a DM with them
-      {:ok, %Channel{id: dm_channel_id}} = Api.create_dm(user_id)
-
-      # Lol
-      Api.create_message(dm_channel_id, "you got turtled, lmao")
+      # # Get the ID of the person who posted the message
+      # {:ok, %Message{author: %User{id: user_id}}} =
+      #   Api.get_channel_message(channel_id, message_id)
+      #
+      # # Open a DM with them
+      # {:ok, %Channel{id: dm_channel_id}} = Api.create_dm(user_id)
+      #
+      # # Lol
+      # Api.create_message(dm_channel_id, "you got turtled, lmao")
     end
   end
 
