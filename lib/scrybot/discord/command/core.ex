@@ -24,22 +24,61 @@ defmodule Scrybot.Discord.Command.Core do
     end
   end
 
+  defp dep_vsns do
+    deps =
+      Scrybot.deps()
+      |> Enum.map(fn x -> ":#{x}$=> #{Scrybot.version(x)}" end)
+
+    dep_vsns({"```\n", deps})
+  end
+
+  defp dep_vsns({str, []}), do: (str <> "```") |> align()
+  defp dep_vsns({str, [dep | deps]}), do: dep_vsns({"#{str}#{dep}\n", deps})
+
+  # This code is kinda gross; i def want to rewrite it up at some point
+  defp align(text) do
+    fieldsbyrow =
+      text
+      |> String.split("\n", trim: true)
+      |> Enum.map(fn row -> String.split(row, "$", trim: true) end)
+
+    maxfields =
+      fieldsbyrow
+      |> Enum.map(fn field -> length(field) end)
+      |> Enum.max()
+
+    colwidths =
+      fieldsbyrow
+      |> Enum.map(fn x -> x ++ List.duplicate("", maxfields - length(x)) end)
+      |> List.zip()
+      |> Enum.map(fn x ->
+        Tuple.to_list(x)
+        |> Enum.map(fn y -> String.length(y) end)
+        |> Enum.max()
+      end)
+
+    fieldsbyrow
+    |> Enum.map(fn row ->
+      row
+      |> Enum.zip(colwidths)
+      |> Enum.map(fn {field, width} -> String.pad_trailing(field, width) end)
+      |> Enum.join(" ")
+      |> String.trim()
+    end)
+    |> Enum.join("\n")
+    # if we dont replace doubled newlines, we wind up with a leading blank line
+    |> String.replace("\n\n", "\n")
+  end
+
   defp version(ctx) do
     embed =
       %Embed{}
       |> Embed.put_title("Scrybot")
-      |> Embed.put_field("Version", Scrybot.version())
-      |> Embed.put_field("Elixir Version", System.version(), true)
-      |> Embed.put_field("OTP Version", :erlang.system_info(:otp_release), true)
-      |> Embed.put_field("ERTS Version", :erlang.system_info(:version), true)
-      |> Embed.put_field("Nostrum Version", Scrybot.version(:nostrum), true)
-      |> Embed.put_field("ConCache Version", Scrybot.version(:con_cache), true)
-      |> Embed.put_field("Jason Version", Scrybot.version(:jason), true)
-      |> Embed.put_field("OPQ Version", Scrybot.version(:opq), true)
-      |> Embed.put_field("UUID Version", Scrybot.version(:elixir_uuid), true)
-      |> Embed.put_field("Tesla Version", Scrybot.version(:tesla), true)
-      |> Embed.put_field("FlexLogger Version", Scrybot.version(:flex_logger), true)
-      |> Embed.put_field("LoggerFileBackend Version", Scrybot.version(:logger_file_backend), true)
+      |> Embed.put_field("Version", Scrybot.version(), false)
+      |> Embed.put_field("Elixir", System.version(), true)
+      |> Embed.put_field("OTP", :erlang.system_info(:otp_release) |> to_string, true)
+      |> Embed.put_field("ERTS", :erlang.system_info(:version) |> to_string, true)
+      |> Embed.put_field("Dependencies", dep_vsns(), false)
       |> Embed.put_color(Colors.success())
 
     Api.create_message(ctx.channel_id, embed: embed)

@@ -12,9 +12,12 @@ defmodule Scrybot do
       case x do
         {app} -> app
         {app, _} -> app
+        {_app, _, runtime: false} -> :reject
         {app, _, _} -> app
       end
     end)
+    |> Enum.reject(fn x -> x == :reject end)
+    |> Enum.sort()
   end
 
   def version do
@@ -25,8 +28,8 @@ defmodule Scrybot do
     resp = :application.get_key(app, :vsn)
 
     case resp do
-      {:ok, vsn} -> vsn
-      _ -> "unknown"
+      {:ok, vsn} -> vsn |> to_string
+      _ -> "runtime: false"
     end
   end
 end
