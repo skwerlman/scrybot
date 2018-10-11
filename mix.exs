@@ -7,7 +7,8 @@ defmodule Scrybot.MixProject do
       version: "0.2.4",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: dialyzer()
     ]
   end
 
@@ -31,6 +32,15 @@ defmodule Scrybot.MixProject do
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 1.5", runtime: false}
+    ]
+  end
+
+  defp dialyzer do
+    [
+      flags: [
+        :underspecs,
+        :error_handling
+      ]
     ]
   end
 end
