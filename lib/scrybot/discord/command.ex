@@ -30,7 +30,7 @@ defmodule Scrybot.Discord.Command do
       rescue
         e ->
           Logger.warn("Failed to initialize command module: #{inspect(module)}")
-          Logger.warn(Exception.format(:error, e, :erlang.get_stacktrace()))
+          Logger.warn(Exception.format(:error, e, __STACKTRACE__))
       end
     end)
   end
@@ -57,7 +57,7 @@ defmodule Scrybot.Discord.Command do
               Logger.error("Command execution failed for: #{inspect(message)}")
           end
 
-          Logger.error(Exception.format(:error, e, :erlang.get_stacktrace()))
+          Logger.error(Exception.format(:error, e, __STACKTRACE__))
       end
     end)
   end
@@ -70,7 +70,7 @@ defmodule Scrybot.Discord.Command do
         e ->
           Logger.error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
 
-          Logger.error(Exception.format(:error, e, :erlang.get_stacktrace()))
+          Logger.error(Exception.format(:error, e, __STACKTRACE__))
       end
     end)
   end
