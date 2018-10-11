@@ -4,6 +4,7 @@ defmodule Scrybot.Discord.Worker do
   use Nostrum.Consumer
   require Logger
 
+  @spec start_link() :: Supervisor.on_start() | no_return()
   def start_link do
     Consumer.start_link(__MODULE__)
   end

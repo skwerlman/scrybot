@@ -86,7 +86,7 @@ defmodule Scrybot.Discord.Command.Core do
 
   defp quit(ctx) do
     if ctx.author.id == 96_197_471_641_812_992 do
-      Api.create_message(ctx.channel_id, content: "Exiting...")
+      {_, _} = Api.create_message(ctx.channel_id, content: "Exiting...")
       System.stop()
     end
   end
