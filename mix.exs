@@ -37,10 +37,24 @@ defmodule Scrybot.MixProject do
   end
 
   defp dialyzer do
+    plt =
+      case Mix.env() do
+        # this fixes a failure when dialyxir is run in a test env
+        :test ->
+          [:ex_unit]
+
+        _ ->
+          []
+      end
+
     [
+      plt_add_apps: plt,
       flags: [
-        :underspecs,
-        :error_handling
+        :unmatched_returns,
+        :error_handling,
+        :race_conditions,
+        :no_opaque,
+        :underspecs
       ]
     ]
   end

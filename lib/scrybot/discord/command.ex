@@ -1,6 +1,7 @@
 defmodule Scrybot.Discord.Command do
   @moduledoc false
   require Logger
+  import Scrybot.LogMacros
 
   def handlers do
     Application.get_env(
@@ -29,8 +30,8 @@ defmodule Scrybot.Discord.Command do
         module.init()
       rescue
         e ->
-          Logger.warn("Failed to initialize command module: #{inspect(module)}")
-          Logger.warn(Exception.format(:error, e, __STACKTRACE__))
+          warn("Failed to initialize command module: #{inspect(module)}")
+          warn(Exception.format(:error, e, __STACKTRACE__))
       end
     end)
   end
@@ -51,13 +52,13 @@ defmodule Scrybot.Discord.Command do
         e ->
           case message do
             %Nostrum.Struct.Message{} ->
-              Logger.error("Command execution failed for: #{inspect(message.content)}")
+              error("Command execution failed for: #{inspect(message.content)}")
 
             _ ->
-              Logger.error("Command execution failed for: #{inspect(message)}")
+              error("Command execution failed for: #{inspect(message)}")
           end
 
-          Logger.error(Exception.format(:error, e, __STACKTRACE__))
+          error(Exception.format(:error, e, __STACKTRACE__))
       end
     end)
   end
@@ -68,9 +69,9 @@ defmodule Scrybot.Discord.Command do
         module.do_reaction_command(mode, reaction)
       rescue
         e ->
-          Logger.error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
+          error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
 
-          Logger.error(Exception.format(:error, e, __STACKTRACE__))
+          error(Exception.format(:error, e, __STACKTRACE__))
       end
     end)
   end

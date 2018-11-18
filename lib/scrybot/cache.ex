@@ -8,10 +8,7 @@ defmodule Scrybot.Cache do
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec init(term()) ::
-          {:ok, {:supervisor.sup_flags(), [:supervisor.child_spec()]}}
-          | :ignore
-  def init(_) do
+  def init(:ok) do
     children = [
       {ConCache,
        [
@@ -24,7 +21,7 @@ defmodule Scrybot.Cache do
        ]}
     ]
 
-    opts = [strategy: :one_for_one, name: Scrybot.Cache.Supervisor]
+    opts = [strategy: :one_for_one]
     Supervisor.init(children, opts)
   end
 end
@@ -34,11 +31,12 @@ defmodule Scrybot.Cache.Middleware do
   @behaviour Tesla.Middleware
   @cacheid Scrybot.Cache.ScryfallCache
   require Logger
+  import Scrybot.LogMacros
 
   def call(env, next, _options) do
     case ConCache.get(@cacheid, {env.url, env.query}) do
       nil ->
-        Logger.info("hitting the real api: #{inspect({env.url, env.query})}")
+        info("hitting the real api: #{inspect({env.url, env.query})}")
         {status, result} = Tesla.run(env, next)
 
         if status == :ok do
@@ -47,7 +45,7 @@ defmodule Scrybot.Cache.Middleware do
               ConCache.put(@cacheid, {env.url, env.query}, result.body)
 
             %{status: status} ->
-              Logger.warn("not caching: status #{inspect(status)}")
+              warn("not caching: status #{inspect(status)}")
           end
 
           {:ok, result}
@@ -56,7 +54,7 @@ defmodule Scrybot.Cache.Middleware do
         end
 
       cached ->
-        Logger.debug("url was cached")
+        debug("url was cached")
         {:ok, %{env | body: cached}}
     end
   end

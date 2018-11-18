@@ -28,7 +28,7 @@ defmodule Scrybot.Discord do
   end
 
   def init(:ok) do
-    opts = [strategy: :one_for_one, name: Scrybot.Discord.Supervisor]
+    opts = [strategy: :one_for_one]
     Supervisor.init(children(), opts)
   end
 end

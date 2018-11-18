@@ -2,6 +2,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
   @scryfall_icon_uri "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
   require Logger
+  import Scrybot.LogMacros
   alias Nostrum.Api
   alias Nostrum.Struct.{Embed, Message, User}
   alias Scrybot.Discord.{Colors, Emoji}
@@ -9,7 +10,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   @doc false
   def init do
-    Logger.info("CardInfoNew command set loaded")
+    info("CardInfoNew command set loaded")
   end
 
   @doc false
@@ -284,7 +285,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp notify_error(reason, channel) do
-    Logger.error(inspect(reason))
+    error(inspect(reason))
     Api.create_message(channel, embed: reason)
   end
 end
