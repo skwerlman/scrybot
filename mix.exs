@@ -26,12 +26,13 @@ defmodule Scrybot.MixProject do
       {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
       {:con_cache, "~> 0.13"},
       {:jason, "~> 1.1"},
-      {:opq, "~> 3.0"},
+      {:opq, "~> 3.1"},
       {:elixir_uuid, "~> 1.2"},
-      {:tesla, "~> 1.0"},
+      {:tesla, "~> 1.2"},
+      {:httpoison, "~> 1.4", override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
-      {:distillery, "~> 1.5", runtime: false}
+      {:distillery, "~> 2.0", runtime: false}
     ]
   end
 
