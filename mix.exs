@@ -32,7 +32,9 @@ defmodule Scrybot.MixProject do
       {:httpoison, "~> 1.4", override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
-      {:distillery, "~> 2.0", runtime: false}
+      {:distillery, "~> 2.0", runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", runtime: false, only: [:dev, :test]},
+      {:credo, "~> 1.0", runtime: false, only: [:dev, :test]}
     ]
   end
 
