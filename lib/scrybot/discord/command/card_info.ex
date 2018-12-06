@@ -33,7 +33,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Stream.uniq()
     # Finally, we run handle_card on each of the cards
     # This is synchronous to avoid split responses being out-of-order
-    |> Enum.each(fn x -> handle_card(x, message, false) end)
+    |> Enum.each(fn x -> handle_card(x, message, :fuzzy) end)
 
     # Same as above, but handles exact-match [=[]]
     ~r/(?:\[=\[(.*?)\]\])/
@@ -41,21 +41,40 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Stream.map(fn [_ | [x | _]] -> x end)
     |> Stream.reject(fn x -> x == [] end)
     |> Stream.uniq()
-    |> Enum.each(fn x -> handle_card(x, message, true) end)
+    |> Enum.each(fn x -> handle_card(x, message, :exact) end)
+
+    # Same as above, but handles searching [?[]]
+    ~r/(?:\[\?\[(.*?)\]\])/
+    |> Regex.scan(message.content)
+    |> Stream.map(fn [_ | [x | _]] -> x end)
+    |> Stream.reject(fn x -> x == [] end)
+    |> Stream.uniq()
+    |> Enum.each(fn x -> handle_search(x, message, :search) end)
+
+    # Same as above, but handles edhrec searching [e[]]
+    ~r/(?:\[e\[(.*?)\]\])/
+    |> Regex.scan(message.content)
+    |> Stream.map(fn [_ | [x | _]] -> x end)
+    |> Stream.reject(fn x -> x == [] end)
+    |> Stream.uniq()
+    |> Enum.each(fn x -> handle_search(x, message, :edhrec) end)
   end
 
-  defp handle_card(card_name, ctx, exact) do
-    card_info =
-      case exact do
-        false ->
-          card_name
-          |> get_card_info()
+  defp handle_card(card_name, ctx, :fuzzy) do
+    card_name |> get_card_info() |> handle_maybe_ambiguous(card_name, ctx)
+  end
 
-        true ->
-          card_name
-          |> get_exact_card_info()
-      end
+  defp handle_card(card_name, ctx, :exact) do
+    card_name |> get_exact_card_info() |> handle_maybe_ambiguous(card_name, ctx)
+  end
 
+  defp handle_card(card_name, ctx, :ambiguous) do
+    card_name
+    |> get_alternate_cards()
+    |> return_alternate_cards(card_name, ctx)
+  end
+
+  defp handle_card(card_info, ctx) do
     case card_info do
       {:ok, info} ->
         rulings =
@@ -66,16 +85,36 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
         return_card(info, rulings, ctx)
 
-      {:error, _, "ambiguous"} ->
-        card_name
-        |> get_alternate_cards()
-        |> return_alternate_cards(card_name, ctx)
-
       {:error, message, _} ->
         return_error(message, ctx)
 
       {:error, message} ->
         return_error(message, ctx)
+    end
+  end
+
+  defp handle_search(search_term, ctx, :search) do
+    search_term |> get_search_info() |> handle_search_results(ctx)
+  end
+
+  defp handle_search(search_term, ctx, :edhrec) do
+    search_term |> get_edhrec_search_info() |> handle_search_results(ctx, :edhrec)
+  end
+
+  defp handle_search_results(results, ctx, mode \\ :search)
+
+  defp handle_search_results({:ok, results}, ctx, mode) do
+    return_search_results(results, ctx, mode)
+  end
+
+  defp handle_search_results({:error, reason}, ctx, _mode) do
+    notify_error(reason, ctx.channel_id)
+  end
+
+  defp handle_maybe_ambiguous(card_info, card_name, ctx) do
+    case card_info do
+      {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
+      _ -> handle_card(card_info, ctx)
     end
   end
 
@@ -99,11 +138,13 @@ defmodule Scrybot.Discord.Command.CardInfo do
           |> Enum.filter(fn {_, v} -> v == "legal" end)
           |> Enum.map(fn {k, _} -> "- #{k}" end)
 
+        # Take every other entry, starting with the 0th
         legal_group_1 =
           legal_formats
           |> Enum.take_every(2)
           |> Enum.join("\n")
 
+        # Take every other entry, starting witht the 1st
         legal_group_2 =
           legal_formats
           |> Enum.drop(1)
@@ -112,13 +153,16 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
         case {legal_group_1, legal_group_2} do
           {"", ""} ->
+            # There are no legal formats
             embed
 
           {_, ""} ->
+            # There is exactly one legal format
             embed
             |> Embed.put_field("Legal in", legal_group_1, true)
 
           {_, _} ->
+            # There are at least 2 legal formats
             embed
             |> Embed.put_field("Legal in", legal_group_1, true)
             |> Embed.put_field("\u200D", legal_group_2, true)
@@ -167,6 +211,10 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp fits_limits?(_info, rulings) do
     # TODO make this smarter
+    # Currently this only checks if there are at least 5 rulings
+    # Ideally, this would check based on the total length of the rulings
+    #
+    # The total max length of an embed is 6000 chars (not graphemes!)
     case length(rulings) do
       x when x <= 5 -> true
       _ -> false
@@ -180,7 +228,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp return_card(%{body: %{"layout" => layout} = body}, rulings, ctx)
+  defp return_card(%{body: %{layout: layout} = body}, rulings, ctx)
        when layout in ["split", "flip", "transform", "double_faced_token"] do
     [last_face | faces] = body["card_faces"] |> Enum.reverse()
 
@@ -264,12 +312,71 @@ defmodule Scrybot.Discord.Command.CardInfo do
     Api.create_message(ctx.channel_id, embed: embed)
   end
 
+  defp return_search_results(%{body: results}, ctx, :search) do
+    # debug(inspect(results))
+
+    card_list =
+      results["data"]
+      |> Enum.to_list()
+      |> Enum.map(fn x -> "- #{x["name"]}" end)
+      |> Enum.take(50)
+
+    msg_body =
+      card_list
+      |> Enum.join("\n")
+
+    embed =
+      %Embed{}
+      |> Embed.put_color(Colors.info())
+      |> Embed.put_title("Search Results (#{length(card_list)} of #{results["total_cards"]})")
+      |> Embed.put_description("#{msg_body}")
+
+    Api.create_message(ctx.channel_id, embed: embed)
+  end
+
+  defp return_search_results(%{body: results}, ctx, :edhrec) do
+    # debug(inspect(results))
+
+    card_list =
+      results["data"]
+      |> Enum.to_list()
+      |> Enum.map(fn x -> "- #{x["name"]} (##{x["edhrec_rank"]})" end)
+      |> Enum.take(50)
+
+    msg_body =
+      card_list
+      |> Enum.join("\n")
+
+    embed =
+      %Embed{}
+      |> Embed.put_color(Colors.info())
+      |> Embed.put_title(
+        "EDHREC Search Results (#{length(card_list)} of #{results["total_cards"]})"
+      )
+      |> Embed.put_description("#{msg_body}")
+
+    Api.create_message(ctx.channel_id, embed: embed)
+  end
+
   defp return_error(message, ctx) do
     Api.create_message(ctx.channel_id, embed: message)
   end
 
+  defp notify_error(reason, channel) do
+    error(inspect(reason))
+    Api.create_message(channel, embed: reason)
+  end
+
   defp get_alternate_cards(card_name) do
     Scryfall.Api.autocomplete(card_name)
+  end
+
+  defp get_search_info(card_name) do
+    Scryfall.Api.cards_search(card_name)
+  end
+
+  defp get_edhrec_search_info(card_name) do
+    Scryfall.Api.cards_search(card_name, order: "edhrec")
   end
 
   defp get_exact_card_info(card_name) do
@@ -282,10 +389,5 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp get_rulings(cardid) do
     Scryfall.Api.rulings(cardid)
-  end
-
-  defp notify_error(reason, channel) do
-    error(inspect(reason))
-    Api.create_message(channel, embed: reason)
   end
 end

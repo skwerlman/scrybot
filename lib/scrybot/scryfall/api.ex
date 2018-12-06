@@ -8,7 +8,7 @@ defmodule Scrybot.Scryfall.Api do
 
   plug(Scrybot.Cache.Middleware)
   plug(Tesla.Middleware.BaseUrl, @scryfall_uri)
-  plug(Tesla.Middleware.Timeout, timeout: 2000)
+  plug(Tesla.Middleware.Timeout, timeout: 3000)
   plug(Tesla.Middleware.Retry, delay: 125, max_retries: 3)
   plug(Tesla.Middleware.DecodeJson)
 
@@ -63,10 +63,10 @@ defmodule Scrybot.Scryfall.Api do
     resp
   end
 
-  defp handle_errors({:ok, resp}) do
+  defp handle_errors({:ok, %{body: body} = resp}) do
     case resp.body["object"] do
       "error" ->
-        b = resp.body
+        b = body
         code = b["code"]
         status = b["status"]
 
@@ -112,6 +112,16 @@ defmodule Scrybot.Scryfall.Api do
     {:error, reason}
   end
 
+  def cards_search(card_name, query_fragment \\ []) do
+    query =
+      query_fragment
+      |> Keyword.merge(q: card_name, format: "json")
+
+    res = ratelimited_get("/cards/search", query: query)
+    # IO.puts("got an answer: #{inspect(res)}")
+    res |> handle_errors()
+  end
+
   def cards_named(card_name, use_exact) do
     query = [
       case use_exact do
@@ -133,8 +143,8 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
-  def autocomplete(partial) do
-    query = [q: partial]
+  def autocomplete(partial_name) do
+    query = [q: partial_name]
     res = ratelimited_get("/cards/autocomplete", query: query)
     res |> handle_errors()
   end
