@@ -51,9 +51,10 @@ defmodule Scrybot.Discord.Command.Core do
       fieldsbyrow
       |> Enum.map(fn x -> x ++ List.duplicate("", maxfields - length(x)) end)
       |> List.zip()
-      |> Enum.map(fn x ->
-        Tuple.to_list(x)
-        |> Enum.map(fn y -> String.length(y) end)
+      |> Enum.map(fn field ->
+        field
+        |> Tuple.to_list()
+        |> Enum.map(fn x -> String.length(x) end)
         |> Enum.max()
       end)
 

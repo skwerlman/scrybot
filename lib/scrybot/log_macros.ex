@@ -1,4 +1,5 @@
 defmodule Scrybot.LogMacros do
+  @moduledoc false
   require Logger
 
   defmacro debug(msg) do
