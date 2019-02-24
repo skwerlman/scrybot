@@ -30,3 +30,7 @@ scrybot-*.tar
 
 # Ignore logs
 /log/
+
+/.elixir_ls/
+
+.mix_tasks

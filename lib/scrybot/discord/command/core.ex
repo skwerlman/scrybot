@@ -5,12 +5,18 @@ defmodule Scrybot.Discord.Command.Core do
   alias Nostrum.Struct.Embed
   alias Scrybot.Discord.Colors
 
+  @behaviour Scrybot.Discord.Behaviour.Handler
+  @behaviour Scrybot.Discord.Behaviour.CommandHandler
+
+  @impl Scrybot.Discord.Behaviour.Handler
   def init do
     Logger.info("Core command set loaded")
   end
 
+  @impl Scrybot.Discord.Behaviour.Handler
   def allow_bots?, do: false
 
+  @impl Scrybot.Discord.Behaviour.CommandHandler
   def do_command(message) do
     case message.content do
       "!!quit now" ->

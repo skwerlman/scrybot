@@ -37,43 +37,49 @@ defmodule Scrybot.Discord.Command do
   end
 
   def do_command(module, message) do
-    Task.start(fn ->
-      try do
-        case message do
-          m = %{author: %{bot: true}} ->
-            if module.allow_bots?() do
+    _ =
+      Task.start(fn ->
+        try do
+          case message do
+            m = %{author: %{bot: true}} ->
+              if module.allow_bots?() do
+                module.do_command(m)
+              end
+
+            m ->
               module.do_command(m)
+          end
+        rescue
+          e ->
+            case message do
+              %Nostrum.Struct.Message{} ->
+                error("Command execution failed for: #{inspect(message.content)}")
+
+              _ ->
+                error("Command execution failed for: #{inspect(message)}")
             end
 
-          m ->
-            module.do_command(m)
+            error(Exception.format(:error, e, __STACKTRACE__))
         end
-      rescue
-        e ->
-          case message do
-            %Nostrum.Struct.Message{} ->
-              error("Command execution failed for: #{inspect(message.content)}")
+      end)
 
-            _ ->
-              error("Command execution failed for: #{inspect(message)}")
-          end
-
-          error(Exception.format(:error, e, __STACKTRACE__))
-      end
-    end)
+    :ok
   end
 
   def do_reaction_command(module, mode, reaction) do
-    Task.start(fn ->
-      try do
-        module.do_reaction_command(mode, reaction)
-      rescue
-        e ->
-          error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
+    _ =
+      Task.start(fn ->
+        try do
+          module.do_reaction_command(mode, reaction)
+        rescue
+          e ->
+            error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
 
-          error(Exception.format(:error, e, __STACKTRACE__))
-      end
-    end)
+            error(Exception.format(:error, e, __STACKTRACE__))
+        end
+      end)
+
+    :ok
   end
 
   def init do

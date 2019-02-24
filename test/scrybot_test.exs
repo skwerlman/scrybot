@@ -1,4 +1,5 @@
 defmodule ScrybotTest do
+  @moduledoc false
   use ExUnit.Case
   doctest Scrybot
 

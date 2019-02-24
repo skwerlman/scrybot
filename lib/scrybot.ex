@@ -12,7 +12,7 @@ defmodule Scrybot do
       case x do
         {app} -> app
         {app, _} -> app
-        {_app, _, runtime: false} -> :reject
+        {_app, _, [{:runtime, false} | _]} -> :reject
         {app, _, _} -> app
       end
     end)
@@ -29,7 +29,7 @@ defmodule Scrybot do
 
     case resp do
       {:ok, vsn} -> vsn |> to_string
-      _ -> "runtime: false"
+      _ -> "unused dep, please report"
     end
   end
 end

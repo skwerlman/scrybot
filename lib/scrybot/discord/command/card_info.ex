@@ -1,6 +1,5 @@
 defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
-  @scryfall_icon_uri "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
   require Logger
   import Scrybot.LogMacros
   alias Nostrum.Api
@@ -8,18 +7,27 @@ defmodule Scrybot.Discord.Command.CardInfo do
   alias Scrybot.Discord.{Colors, Emoji}
   alias Scrybot.Scryfall
 
+  @behaviour Scrybot.Discord.Behaviour.Handler
+  @behaviour Scrybot.Discord.Behaviour.CommandHandler
+
+  @scryfall_icon_uri "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
+
   @doc false
+  @impl Scrybot.Discord.Behaviour.Handler
   def init do
-    info("CardInfoNew command set loaded")
+    info("CardInfo command set loaded")
+    :ok
   end
 
   @doc false
+  @impl Scrybot.Discord.Behaviour.Handler
   def allow_bots?, do: false
 
   @doc """
   Scan the message for patterns like [[card name]] and look up info
   about each of those cards.
   """
+  @impl Scrybot.Discord.Behaviour.CommandHandler
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
     ~r/(?:\[\[(.*?)\]\])/
     |> Regex.scan(message.content)
@@ -58,6 +66,8 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Stream.reject(fn x -> x == [] end)
     |> Stream.uniq()
     |> Enum.each(fn x -> handle_search(x, message, :edhrec) end)
+
+    :ok
   end
 
   defp handle_card(card_name, ctx, :fuzzy) do

@@ -1,6 +1,6 @@
-defmodule Scrybot.Cache do
+defmodule Scrybot.Scryfall.Cache do
   @moduledoc false
-  @cacheid Scrybot.Cache.ScryfallCache
+  @cacheid Scrybot.Scryfall.CacheWorker
   use Supervisor
 
   @spec start_link(term()) :: Supervisor.on_start()
@@ -26,10 +26,10 @@ defmodule Scrybot.Cache do
   end
 end
 
-defmodule Scrybot.Cache.Middleware do
+defmodule Scrybot.Scryfall.Cache.Middleware do
   @moduledoc false
   @behaviour Tesla.Middleware
-  @cacheid Scrybot.Cache.ScryfallCache
+  @cacheid Scrybot.Scryfall.CacheWorker
   require Logger
   import Scrybot.LogMacros
 

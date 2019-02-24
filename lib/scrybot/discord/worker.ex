@@ -1,14 +1,16 @@
 defmodule Scrybot.Discord.Worker do
   @moduledoc false
+  alias Nostrum.Consumer
   alias Scrybot.Discord.Command
   use Nostrum.Consumer
   require Logger
 
-  @spec start_link() :: Supervisor.on_start() | no_return()
+  # @spec start_link() :: Supervisor.on_start() | no_return()
   def start_link do
     Consumer.start_link(__MODULE__)
   end
 
+  @impl Nostrum.Consumer
   def handle_event({:MESSAGE_CREATE, {message}, _ws}) do
     command_handlers = Command.handlers()
 
@@ -18,6 +20,7 @@ defmodule Scrybot.Discord.Worker do
     :ok
   end
 
+  @impl Nostrum.Consumer
   def handle_event({:MESSAGE_REACTION_ADD, {reaction}, _ws}) do
     react_handlers = Command.react_handlers()
 
@@ -27,6 +30,7 @@ defmodule Scrybot.Discord.Worker do
     :ok
   end
 
+  @impl Nostrum.Consumer
   def handle_event({:MESSAGE_REACTION_REMOVE, {reaction}, _ws}) do
     react_handlers = Command.react_handlers()
 
@@ -36,5 +40,6 @@ defmodule Scrybot.Discord.Worker do
     :ok
   end
 
+  @impl Nostrum.Consumer
   def handle_event(_), do: :ok
 end

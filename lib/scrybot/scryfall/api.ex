@@ -6,62 +6,12 @@ defmodule Scrybot.Scryfall.Api do
   alias Scrybot.Discord.Colors
   require Logger
 
-  plug(Scrybot.Cache.Middleware)
+  plug(Scrybot.Scryfall.Ratelimiter.Middleware, {:scryfall_bucket, 1000, 10})
+  plug(Scrybot.Scryfall.Cache.Middleware)
   plug(Tesla.Middleware.BaseUrl, @scryfall_uri)
-  plug(Tesla.Middleware.Timeout, timeout: 3000)
+  plug(Tesla.Middleware.Timeout, timeout: 4000)
   plug(Tesla.Middleware.Retry, delay: 125, max_retries: 3)
   plug(Tesla.Middleware.DecodeJson)
-
-  def setup do
-    _ = :ets.new(:scryfall_queue_data, [:set, :public, :named_table])
-    {:ok, opq} = OPQ.init(workers: 1, interval: 60, timeout: 60_000)
-    :ets.insert(:scryfall_queue_data, {:opq, opq})
-  end
-
-  defp getval(rkey) do
-    [{_, state}] = :ets.lookup(:scryfall_queue_data, {rkey, :status})
-    getval(rkey, state)
-  end
-
-  defp getval(rkey, :queued) do
-    Process.sleep(60)
-    [{_, state}] = :ets.lookup(:scryfall_queue_data, {rkey, :status})
-    getval(rkey, state)
-  end
-
-  defp getval(rkey, :running) do
-    Process.sleep(6)
-    [{_, state}] = :ets.lookup(:scryfall_queue_data, {rkey, :status})
-    getval(rkey, state)
-  end
-
-  defp getval(rkey, :done) do
-    [{_, resp}] = :ets.lookup(:scryfall_queue_data, {rkey, :response})
-    resp
-  end
-
-  def ratelimited_get(url, query) do
-    [{:opq, opq}] = :ets.lookup(:scryfall_queue_data, :opq)
-
-    request_key = UUID.uuid4()
-
-    :ets.insert(:scryfall_queue_data, {{request_key, :status}, :queued})
-
-    OPQ.enqueue(opq, fn ->
-      :ets.insert(:scryfall_queue_data, {{request_key, :status}, :running})
-      # this is Tesla's get
-      response = get(url, query)
-      :ets.insert(:scryfall_queue_data, {{request_key, :response}, response})
-      :ets.insert(:scryfall_queue_data, {{request_key, :status}, :done})
-    end)
-
-    resp = getval(request_key)
-
-    :ets.delete(:scryfall_queue_data, {request_key, :status})
-    :ets.delete(:scryfall_queue_data, {request_key, :response})
-
-    resp
-  end
 
   defp handle_errors({:ok, %{body: body} = resp}) do
     case resp.body["object"] do
@@ -117,7 +67,7 @@ defmodule Scrybot.Scryfall.Api do
       query_fragment
       |> Keyword.merge(q: card_name, format: "json")
 
-    res = ratelimited_get("/cards/search", query: query)
+    res = get("/cards/search", query: query)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
@@ -131,21 +81,21 @@ defmodule Scrybot.Scryfall.Api do
       format: "json"
     ]
 
-    res = ratelimited_get("/cards/named", query: query)
+    res = get("/cards/named", query: query)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
 
   def rulings(cardid) do
     query = [format: "json"]
-    res = ratelimited_get("/cards/#{cardid}/rulings", query: query)
+    res = get("/cards/#{cardid}/rulings", query: query)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
 
   def autocomplete(partial_name) do
     query = [q: partial_name]
-    res = ratelimited_get("/cards/autocomplete", query: query)
+    res = get("/cards/autocomplete", query: query)
     res |> handle_errors()
   end
 end

@@ -1,10 +1,11 @@
 defmodule Scrybot.MixProject do
+  @moduledoc false
   use Mix.Project
 
   def project do
     [
       app: :scrybot,
-      version: "0.4.0",
+      version: "0.5.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -26,10 +27,11 @@ defmodule Scrybot.MixProject do
       {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
       {:con_cache, "~> 0.13"},
       {:jason, "~> 1.1"},
-      {:opq, "~> 3.1"},
+      {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.2"},
       {:httpoison, "~> 1.4", override: true},
+      {:nimble_parsec, "~> 0.5"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 2.0", runtime: false},
