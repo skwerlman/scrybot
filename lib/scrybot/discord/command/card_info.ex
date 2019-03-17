@@ -30,6 +30,8 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @impl Scrybot.Discord.Behaviour.CommandHandler
   @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
+    # --------------- CARD ---------------
+
     ~r/(?:\[\[(.*?)\]\])/
     |> Regex.scan(message.content)
     # Regex.scan returns results as a list of lists
@@ -124,10 +126,10 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp handle_art(card_info, ctx) do
+  defp handle_art(card_info, card_name, ctx) do
     case card_info do
       {:ok, info} ->
-        return_art(info, ctx)
+        return_art(info, card_name, ctx)
 
       {:error, message, _} ->
         return_error(message, ctx)
@@ -147,7 +149,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   defp handle_maybe_ambiguous_art(card_info, card_name, ctx) do
     case card_info do
       {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
-      _ -> handle_art(card_info, ctx)
+      _ -> handle_art(card_info, card_name, ctx)
     end
   end
 
@@ -345,7 +347,36 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp return_art(%{body: info}, ctx) do
+  @spec return_art(map(), String.t(), Nostrum.Struct.Message.t()) :: :ok
+  defp return_art(%{body: %{"layout" => "double_faced_token"} = info}, card_name, ctx) do
+    for face <- info["card_faces"] do
+      if Scrybot.DamerauLevenshtein.equivalent?(
+           face["name"],
+           card_name,
+           Integer.floor_div(String.length(card_name), 4)
+         ) do
+        info
+        |> Map.merge(face)
+        |> return_art(ctx)
+      end
+    end
+  end
+
+  defp return_art(%{body: %{"layout" => layout} = info}, _card_name, ctx)
+       when layout == "transform" do
+    for face <- info["card_faces"] do
+      Map.merge(info, face)
+    end
+    |> Enum.each(fn x ->
+      return_art(x, ctx)
+    end)
+  end
+
+  defp return_art(%{body: info}, _card_name, ctx) do
+    return_art(info, ctx)
+  end
+
+  defp return_art(info, ctx) do
     embed =
       %Embed{}
       |> Embed.put_color(Colors.success())
