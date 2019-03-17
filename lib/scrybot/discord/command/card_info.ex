@@ -279,7 +279,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   defp footer do
     case Enum.random(1..5000) do
       x when x in 1..4999 -> "data sourced from Scryfall"
-      5000 -> "data forcefully ripped from the cold, dead hands of Scryfall"
+      2500 -> "data forcefully ripped from the cold, dead hands of Scryfall"
     end
   end
 
