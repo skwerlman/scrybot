@@ -28,6 +28,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   about each of those cards.
   """
   @impl Scrybot.Discord.Behaviour.CommandHandler
+  @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
     ~r/(?:\[\[(.*?)\]\])/
     |> Regex.scan(message.content)
@@ -100,7 +101,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp handle_card(card_name, ctx, :ambiguous) do
     card_name
-    |> get_alternate_cards()
+    |> Scryfall.Api.autocomplete()
     |> return_alternate_cards(card_name, ctx)
   end
 
@@ -108,7 +109,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     case card_info do
       {:ok, info} ->
         rulings =
-          case get_rulings(info.body["id"]) do
+          case Scryfall.Api.rulings(info.body["id"]) do
             {:ok, %{body: resp}} -> resp["data"]
             {:error, reason} -> notify_error(reason, ctx.channel_id)
           end
@@ -151,11 +152,15 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp handle_search(search_term, ctx, :search) do
-    search_term |> get_search_info() |> handle_search_results(ctx)
+    search_term
+    |> Scryfall.Api.cards_search()
+    |> handle_search_results(ctx)
   end
 
   defp handle_search(search_term, ctx, :edhrec) do
-    search_term |> get_edhrec_search_info() |> handle_search_results(ctx, :edhrec)
+    search_term
+    |> Scryfall.Api.cards_search()
+    |> handle_search_results(ctx, :edhrec)
   end
 
   defp handle_search_results(results, ctx, mode \\ :search)
@@ -427,29 +432,5 @@ defmodule Scrybot.Discord.Command.CardInfo do
   defp notify_error(reason, channel) do
     error(inspect(reason))
     Api.create_message(channel, embed: reason)
-  end
-
-  defp get_alternate_cards(card_name) do
-    Scryfall.Api.autocomplete(card_name)
-  end
-
-  defp get_search_info(card_name) do
-    Scryfall.Api.cards_search(card_name)
-  end
-
-  defp get_edhrec_search_info(card_name) do
-    Scryfall.Api.cards_search(card_name, order: "edhrec")
-  end
-
-  defp get_exact_card_info(card_name) do
-    Scryfall.Api.cards_named(card_name, true)
-  end
-
-  defp get_card_info(card_name) do
-    Scryfall.Api.cards_named(card_name, false)
-  end
-
-  defp get_rulings(cardid) do
-    Scryfall.Api.rulings(cardid)
   end
 end
