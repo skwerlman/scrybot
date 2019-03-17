@@ -72,7 +72,7 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
-  def cards_named(card_name, use_exact) do
+  def cards_named(card_name, use_exact \\ true) do
     query = [
       case use_exact do
         true -> {:exact, card_name}
