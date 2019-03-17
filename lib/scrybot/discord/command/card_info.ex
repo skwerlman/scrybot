@@ -51,6 +51,16 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Stream.uniq()
     |> Enum.each(fn x -> handle_card(x, message, :exact) end)
 
+    # Same as above, but handles art [a[]]
+    ~r/(?:\[a\[(.*?)\]\])/
+    |> Regex.scan(message.content)
+    |> Stream.map(fn [_ | [x | _]] -> x end)
+    |> Stream.reject(fn x -> x == [] end)
+    |> Stream.uniq()
+    |> Enum.each(fn x -> handle_card(x, message, :art) end)
+
+    # --------------- SEARCH ---------------
+
     # Same as above, but handles searching [?[]]
     ~r/(?:\[\?\[(.*?)\]\])/
     |> Regex.scan(message.content)
@@ -71,11 +81,21 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp handle_card(card_name, ctx, :fuzzy) do
-    card_name |> get_card_info() |> handle_maybe_ambiguous(card_name, ctx)
+    card_name
+    |> Scryfall.Api.cards_named(false)
+    |> handle_maybe_ambiguous(card_name, ctx)
   end
 
   defp handle_card(card_name, ctx, :exact) do
-    card_name |> get_exact_card_info() |> handle_maybe_ambiguous(card_name, ctx)
+    card_name
+    |> Scryfall.Api.cards_named()
+    |> handle_maybe_ambiguous(card_name, ctx)
+  end
+
+  defp handle_card(card_name, ctx, :art) do
+    card_name
+    |> Scryfall.Api.cards_named(false)
+    |> handle_maybe_ambiguous_art(card_name, ctx)
   end
 
   defp handle_card(card_name, ctx, :ambiguous) do
@@ -103,6 +123,33 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
+  defp handle_art(card_info, ctx) do
+    case card_info do
+      {:ok, info} ->
+        return_art(info, ctx)
+
+      {:error, message, _} ->
+        return_error(message, ctx)
+
+      {:error, message} ->
+        return_error(message, ctx)
+    end
+  end
+
+  defp handle_maybe_ambiguous(card_info, card_name, ctx) do
+    case card_info do
+      {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
+      _ -> handle_card(card_info, ctx)
+    end
+  end
+
+  defp handle_maybe_ambiguous_art(card_info, card_name, ctx) do
+    case card_info do
+      {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
+      _ -> handle_art(card_info, ctx)
+    end
+  end
+
   defp handle_search(search_term, ctx, :search) do
     search_term |> get_search_info() |> handle_search_results(ctx)
   end
@@ -119,13 +166,6 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp handle_search_results({:error, reason}, ctx, _mode) do
     notify_error(reason, ctx.channel_id)
-  end
-
-  defp handle_maybe_ambiguous(card_info, card_name, ctx) do
-    case card_info do
-      {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
-      _ -> handle_card(card_info, ctx)
-    end
   end
 
   defp put_rulings(embed, []), do: embed
@@ -298,6 +338,18 @@ defmodule Scrybot.Discord.Command.CardInfo do
     for embed <- embeds do
       Api.create_message(ctx.channel_id, embed: embed)
     end
+  end
+
+  defp return_art(%{body: info}, ctx) do
+    embed =
+      %Embed{}
+      |> Embed.put_color(Colors.success())
+      |> Embed.put_title(info["name"])
+      |> Embed.put_url(info["scryfall_uri"])
+      |> Embed.put_image(info["image_uris"]["art_crop"])
+      |> Embed.put_footer(footer(), @scryfall_icon_uri)
+
+    Api.create_message(ctx.channel_id, embed: embed)
   end
 
   defp return_alternate_cards({:error, message}, _, ctx), do: return_error(message, ctx)
