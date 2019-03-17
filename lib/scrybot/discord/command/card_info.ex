@@ -238,7 +238,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp return_card(%{body: %{layout: layout} = body}, rulings, ctx)
+  defp return_card(%{body: %{"layout" => layout} = body}, rulings, ctx)
        when layout in ["split", "flip", "transform", "double_faced_token"] do
     [last_face | faces] = body["card_faces"] |> Enum.reverse()
 
