@@ -407,7 +407,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     card_list =
       results["data"]
       |> Enum.to_list()
-      |> Enum.map(fn x -> "- #{x["name"]} (##{x["edhrec_rank"]})" end)
+      |> Enum.map(fn x -> "- **#{x["name"]}** (##{x["edhrec_rank"]})" end)
       |> Enum.take(50)
 
     msg_body =
