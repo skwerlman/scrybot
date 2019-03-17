@@ -350,6 +350,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
       %Embed{}
       |> Embed.put_color(Colors.success())
       |> Embed.put_title(info["name"])
+      |> Embed.put_field("Artist", info["artist"])
       |> Embed.put_url(info["scryfall_uri"])
       |> Embed.put_image(info["image_uris"]["art_crop"])
       |> Embed.put_footer(footer(), @scryfall_icon_uri)
