@@ -19,12 +19,18 @@ defmodule Scrybot.Discord do
         _ -> target_workers
       end
 
-    for i <- 1..workers do
-      Supervisor.child_spec(
-        Scrybot.Discord.Worker,
-        id: {Scrybot.Discord.Worker, i}
-      )
-    end
+    consumers =
+      for i <- 1..workers do
+        Supervisor.child_spec(
+          Scrybot.Discord.Worker,
+          id: {Scrybot.Discord.Worker, i}
+        )
+      end
+
+    [
+      Scrybot.Discord.FailureDispatcher
+      | consumers
+    ]
   end
 
   def init(:ok) do
