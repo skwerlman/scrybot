@@ -27,11 +27,9 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
 
   # handle default (fuzzy) searches
   def tokenize("[[" <> term_and_rest, ctx) do
-    [term | [opts | rest_as_list]] =
+    [term, opts, rest] =
       term_and_rest
-      |> String.split("]")
-
-    rest = Enum.join(rest_as_list, "]")
+      |> String.split("]", parts: 3)
 
     [{:fuzzy, term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
   end
