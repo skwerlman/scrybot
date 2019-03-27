@@ -37,7 +37,7 @@ defmodule Scrybot.DamerauLevenshtein do
   Compute whether the damerau-levenshtein distance between 2 strings is at or below k (cost).
   This entails tallying the total cost of all insertions, deletions, substitutions and transpositions
   """
-  @spec equivalent?(binary(), binary(), integer()) :: boolean()
+  @spec equivalent?(String.t(), String.t(), integer()) :: boolean()
   @spec distance(String.t(), String.t()) :: integer()
   @spec distance(String.t(), String.t(), integer()) :: integer()
   @spec distance(String.t(), String.t(), integer(), integer()) :: integer()
