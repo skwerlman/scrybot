@@ -27,20 +27,34 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
 
   # handle default (fuzzy) searches
   def tokenize("[[" <> term_and_rest, ctx) do
-    [term, opts, rest] =
-      term_and_rest
-      |> String.split("]", parts: 3)
+    case term_and_rest |> String.split("]", parts: 3) do
+      [term, opts, rest] ->
+        [{:fuzzy, term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
 
-    [{:fuzzy, term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
+      _ ->
+        send(
+          FailureDispatcher,
+          {:warning, "Unmatched `[`! Some searches will be incorrect or skipped.", ctx}
+        )
+
+        []
+    end
   end
 
   # handle moded searches
   def tokenize("[" <> <<mode_string::bytes-size(1)>> <> "[" <> term_and_rest, ctx) do
-    [term, opts, rest] =
-      term_and_rest
-      |> String.split("]", parts: 3)
+    case term_and_rest |> String.split("]", parts: 3) do
+      [term, opts, rest] ->
+        [{mode(mode_string, ctx), term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
 
-    [{mode(mode_string, ctx), term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
+      _ ->
+        send(
+          FailureDispatcher,
+          {:warning, "Unmatched `[`. Some searches will be incorrect or skipped.", ctx}
+        )
+
+        []
+    end
   end
 
   # discard unrecognized bytes
