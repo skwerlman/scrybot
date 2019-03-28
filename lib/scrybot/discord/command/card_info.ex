@@ -33,13 +33,13 @@ defmodule Scrybot.Discord.Command.CardInfo do
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
     requests = Parser.tokenize(message.content, message)
 
-    for {mode, query, _options} <- requests do
+    for {mode, query, options} <- requests do
       cond do
         mode in [:search, :edhrec] ->
-          handle_search(query, message, mode)
+          handle_search(query, options, message, mode)
 
         mode in [:art, :fuzzy, :exact] ->
-          handle_card(query, message, mode)
+          handle_card(query, options, message, mode)
 
         {:error, reason} = mode ->
           send(Scrybot.Discord.FailureDispatcher, {:error, reason, message})
@@ -49,21 +49,75 @@ defmodule Scrybot.Discord.Command.CardInfo do
     :ok
   end
 
-  defp handle_card(card_name, ctx, :fuzzy) do
+  defp handle_card(card_name, options, ctx, :fuzzy) do
+    opts =
+      for option <- options do
+        case option do
+          {"set", set} ->
+            {:set, set}
+
+          {name, _val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name '#{name}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     card_name
-    |> Scryfall.Api.cards_named(false)
+    |> Scryfall.Api.cards_named(false, opts)
     |> handle_maybe_ambiguous(card_name, ctx)
   end
 
-  defp handle_card(card_name, ctx, :exact) do
+  defp handle_card(card_name, options, ctx, :exact) do
+    opts =
+      for option <- options do
+        case option do
+          {"set", set} ->
+            {:set, set}
+
+          {name, _val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name '#{name}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     card_name
-    |> Scryfall.Api.cards_named()
+    |> Scryfall.Api.cards_named(true, opts)
     |> handle_maybe_ambiguous(card_name, ctx)
   end
 
-  defp handle_card(card_name, ctx, :art) do
+  defp handle_card(card_name, options, ctx, :art) do
+    opts =
+      for option <- options do
+        case option do
+          {"set", set} ->
+            {:set, set}
+
+          {"face", face} ->
+            {:face, face}
+
+          {name, _val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name '#{name}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     card_name
-    |> Scryfall.Api.cards_named(false)
+    |> Scryfall.Api.cards_named(false, opts)
     |> handle_maybe_ambiguous_art(card_name, ctx)
   end
 
@@ -119,15 +173,109 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp handle_search(search_term, ctx, :search) do
+  defp handle_search(search_term, options, ctx, :search) do
+    opts =
+      for option <- options do
+        case option do
+          {"unique", unique} when unique in ["cards", "art", "prints"] ->
+            {:unique, unique}
+
+          {"order", order}
+          when order in [
+                 "name",
+                 "set",
+                 "released",
+                 "rarity",
+                 "color",
+                 "usd",
+                 "tix",
+                 "eur",
+                 "cmc",
+                 "power",
+                 "toughness",
+                 "edhrec",
+                 "artist"
+               ] ->
+            {:order, order}
+
+          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+            {:dir, dir}
+
+          {"include", "extras"} ->
+            {:include_extras, true}
+
+          {"include", "multilingual"} ->
+            {:include_multilingual, true}
+
+          {"include", "variations"} ->
+            {:include_variations, true}
+
+          {name, val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     search_term
-    |> Scryfall.Api.cards_search()
+    |> Scryfall.Api.cards_search(opts)
     |> handle_search_results(ctx)
   end
 
-  defp handle_search(search_term, ctx, :edhrec) do
+  defp handle_search(search_term, options, ctx, :edhrec) do
+    opts =
+      for option <- options do
+        case option do
+          {"unique", unique} when unique in ["cards", "art", "prints"] ->
+            {:unique, unique}
+
+          {"order", order}
+          when order in [
+                 "name",
+                 "set",
+                 "released",
+                 "rarity",
+                 "color",
+                 "usd",
+                 "tix",
+                 "eur",
+                 "cmc",
+                 "power",
+                 "toughness",
+                 "edhrec",
+                 "artist"
+               ] ->
+            {:order, order}
+
+          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+            {:dir, dir}
+
+          {"include", "extras"} ->
+            {:include_extras, true}
+
+          {"include", "multilingual"} ->
+            {:include_multilingual, true}
+
+          {"include", "variations"} ->
+            {:include_variations, true}
+
+          {name, val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     search_term
-    |> Scryfall.Api.cards_search()
+    |> Scryfall.Api.cards_search(opts)
     |> handle_search_results(ctx, :edhrec)
   end
 
