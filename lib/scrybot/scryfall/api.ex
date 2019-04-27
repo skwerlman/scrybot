@@ -62,17 +62,18 @@ defmodule Scrybot.Scryfall.Api do
     {:error, reason}
   end
 
-  def cards_search(card_name, query_fragment \\ []) do
-    query =
-      query_fragment
-      |> Keyword.merge(q: card_name, format: "json")
+  def cards_search(card_name, options \\ []) do
+    query = [
+      q: card_name,
+      format: "json"
+    ]
 
-    res = get("/cards/search", query: query)
+    res = get("/cards/search", query: query ++ options)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
 
-  def cards_named(card_name, use_exact \\ true) do
+  def cards_named(card_name, use_exact, options \\ []) do
     query = [
       case use_exact do
         true -> {:exact, card_name}
@@ -81,7 +82,7 @@ defmodule Scrybot.Scryfall.Api do
       format: "json"
     ]
 
-    res = get("/cards/named", query: query)
+    res = get("/cards/named", query: query ++ options)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end

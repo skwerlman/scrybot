@@ -5,6 +5,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   alias Nostrum.Api
   alias Nostrum.Struct.{Embed, Message, User}
   alias Scrybot.Discord.{Colors, Emoji}
+  alias Scrybot.Discord.Command.CardInfo.Parser
   alias Scrybot.Scryfall
 
   @behaviour Scrybot.Discord.Behaviour.Handler
@@ -30,74 +31,93 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @impl Scrybot.Discord.Behaviour.CommandHandler
   @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
-    # --------------- CARD ---------------
+    requests = Parser.tokenize(message.content, message)
 
-    ~r/(?:\[\[(.*?)\]\])/
-    |> Regex.scan(message.content)
-    # Regex.scan returns results as a list of lists
-    # We only care about the second capture, so we strip off the rest
-    |> Stream.map(fn [_ | [x | _]] -> x end)
-    # Its possible for the above filter to return an
-    # empty list, so we remove it here
-    |> Stream.reject(fn x -> x == [] end)
-    # We only want to handle a given card once, so we filter for unique cards
-    |> Stream.uniq()
-    # Finally, we run handle_card on each of the cards
-    # This is synchronous to avoid split responses being out-of-order
-    |> Enum.each(fn x -> handle_card(x, message, :fuzzy) end)
+    for {mode, query, options} <- requests do
+      cond do
+        mode in [:search, :edhrec] ->
+          handle_search(query, options, message, mode)
 
-    # Same as above, but handles exact-match [=[]]
-    ~r/(?:\[=\[(.*?)\]\])/
-    |> Regex.scan(message.content)
-    |> Stream.map(fn [_ | [x | _]] -> x end)
-    |> Stream.reject(fn x -> x == [] end)
-    |> Stream.uniq()
-    |> Enum.each(fn x -> handle_card(x, message, :exact) end)
+        mode in [:art, :fuzzy, :exact] ->
+          handle_card(query, options, message, mode)
 
-    # Same as above, but handles art [a[]]
-    ~r/(?:\[a\[(.*?)\]\])/
-    |> Regex.scan(message.content)
-    |> Stream.map(fn [_ | [x | _]] -> x end)
-    |> Stream.reject(fn x -> x == [] end)
-    |> Stream.uniq()
-    |> Enum.each(fn x -> handle_card(x, message, :art) end)
-
-    # --------------- SEARCH ---------------
-
-    # Same as above, but handles searching [?[]]
-    ~r/(?:\[\?\[(.*?)\]\])/
-    |> Regex.scan(message.content)
-    |> Stream.map(fn [_ | [x | _]] -> x end)
-    |> Stream.reject(fn x -> x == [] end)
-    |> Stream.uniq()
-    |> Enum.each(fn x -> handle_search(x, message, :search) end)
-
-    # Same as above, but handles edhrec searching [e[]]
-    ~r/(?:\[e\[(.*?)\]\])/
-    |> Regex.scan(message.content)
-    |> Stream.map(fn [_ | [x | _]] -> x end)
-    |> Stream.reject(fn x -> x == [] end)
-    |> Stream.uniq()
-    |> Enum.each(fn x -> handle_search(x, message, :edhrec) end)
+        {:error, reason} = mode ->
+          send(Scrybot.Discord.FailureDispatcher, {:error, reason, message})
+      end
+    end
 
     :ok
   end
 
-  defp handle_card(card_name, ctx, :fuzzy) do
+  defp handle_card(card_name, options, ctx, :fuzzy) do
+    opts =
+      for option <- options do
+        case option do
+          {"set", set} ->
+            {:set, set}
+
+          {name, _val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name '#{name}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     card_name
-    |> Scryfall.Api.cards_named(false)
+    |> Scryfall.Api.cards_named(false, opts)
     |> handle_maybe_ambiguous(card_name, ctx)
   end
 
-  defp handle_card(card_name, ctx, :exact) do
+  defp handle_card(card_name, options, ctx, :exact) do
+    opts =
+      for option <- options do
+        case option do
+          {"set", set} ->
+            {:set, set}
+
+          {name, _val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name '#{name}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     card_name
-    |> Scryfall.Api.cards_named()
+    |> Scryfall.Api.cards_named(true, opts)
     |> handle_maybe_ambiguous(card_name, ctx)
   end
 
-  defp handle_card(card_name, ctx, :art) do
+  defp handle_card(card_name, options, ctx, :art) do
+    opts =
+      for option <- options do
+        case option do
+          {"set", set} ->
+            {:set, set}
+
+          {"face", face} ->
+            {:face, face}
+
+          {name, _val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name '#{name}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     card_name
-    |> Scryfall.Api.cards_named(false)
+    |> Scryfall.Api.cards_named(false, opts)
     |> handle_maybe_ambiguous_art(card_name, ctx)
   end
 
@@ -153,15 +173,109 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp handle_search(search_term, ctx, :search) do
+  defp handle_search(search_term, options, ctx, :search) do
+    opts =
+      for option <- options do
+        case option do
+          {"unique", unique} when unique in ["cards", "art", "prints"] ->
+            {:unique, unique}
+
+          {"order", order}
+          when order in [
+                 "name",
+                 "set",
+                 "released",
+                 "rarity",
+                 "color",
+                 "usd",
+                 "tix",
+                 "eur",
+                 "cmc",
+                 "power",
+                 "toughness",
+                 "edhrec",
+                 "artist"
+               ] ->
+            {:order, order}
+
+          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+            {:dir, dir}
+
+          {"include", "extras"} ->
+            {:include_extras, true}
+
+          {"include", "multilingual"} ->
+            {:include_multilingual, true}
+
+          {"include", "variations"} ->
+            {:include_variations, true}
+
+          {name, val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     search_term
-    |> Scryfall.Api.cards_search()
+    |> Scryfall.Api.cards_search(opts)
     |> handle_search_results(ctx)
   end
 
-  defp handle_search(search_term, ctx, :edhrec) do
+  defp handle_search(search_term, options, ctx, :edhrec) do
+    opts =
+      for option <- options do
+        case option do
+          {"unique", unique} when unique in ["cards", "art", "prints"] ->
+            {:unique, unique}
+
+          {"order", order}
+          when order in [
+                 "name",
+                 "set",
+                 "released",
+                 "rarity",
+                 "color",
+                 "usd",
+                 "tix",
+                 "eur",
+                 "cmc",
+                 "power",
+                 "toughness",
+                 "edhrec",
+                 "artist"
+               ] ->
+            {:order, order}
+
+          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+            {:dir, dir}
+
+          {"include", "extras"} ->
+            {:include_extras, true}
+
+          {"include", "multilingual"} ->
+            {:include_multilingual, true}
+
+          {"include", "variations"} ->
+            {:include_variations, true}
+
+          {name, val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
+
     search_term
-    |> Scryfall.Api.cards_search()
+    |> Scryfall.Api.cards_search(opts)
     |> handle_search_results(ctx, :edhrec)
   end
 

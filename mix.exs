@@ -5,8 +5,8 @@ defmodule Scrybot.MixProject do
   def project do
     [
       app: :scrybot,
-      version: "0.6.3",
-      elixir: "~> 1.7",
+      version: "0.7.0",
+      elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer()
