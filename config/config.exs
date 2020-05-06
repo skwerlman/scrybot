@@ -28,7 +28,7 @@ use Mix.Config
 # here (which is why it is important to import them last).
 
 config :scrybot,
-  workers: 2
+  workers: :auto
 
 config :logger,
   backends: [

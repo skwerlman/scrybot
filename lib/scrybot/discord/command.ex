@@ -1,7 +1,6 @@
 defmodule Scrybot.Discord.Command do
   @moduledoc false
-  require Logger
-  import Scrybot.LogMacros
+  use Scrybot.LogMacros
 
   def handlers do
     Application.get_env(
@@ -9,7 +8,9 @@ defmodule Scrybot.Discord.Command do
       :command_handlers,
       [
         Scrybot.Discord.Command.CardInfo,
-        Scrybot.Discord.Command.Core
+        Scrybot.Discord.Command.Core,
+        Scrybot.Discord.Command.Pinboard,
+        Scrybot.Discord.Command.Testing
       ]
     )
   end
@@ -19,7 +20,9 @@ defmodule Scrybot.Discord.Command do
       :scrybot,
       :react_handlers,
       [
+        Scrybot.Discord.Command.Pinboard,
         Scrybot.Discord.Command.Turtler3000
+        # Scrybot.Discord.Command.Scoreboard
       ]
     )
   end
@@ -36,6 +39,7 @@ defmodule Scrybot.Discord.Command do
     end)
   end
 
+  @spec do_command(atom(), message :: map()) :: :ok
   def do_command(module, message) do
     _ =
       Task.start(fn ->
@@ -81,6 +85,12 @@ defmodule Scrybot.Discord.Command do
     :ok
   end
 
+  @spec do_reaction_command(
+          atom(),
+          Scrybot.Discord.Behaviour.ReactionHandler.mode(),
+          reaction :: map()
+        ) ::
+          :ok
   def do_reaction_command(module, mode, reaction) do
     _ =
       Task.start(fn ->

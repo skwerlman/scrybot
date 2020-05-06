@@ -4,7 +4,8 @@ defmodule Scrybot.Scryfall.Api do
   use Tesla
   alias Nostrum.Struct.Embed
   alias Scrybot.Discord.Colors
-  require Logger
+
+  @type error :: {:error, Embed.t(), String.t()}
 
   plug(Scrybot.Scryfall.Ratelimiter.Middleware, {:scryfall_bucket, 1000, 10})
   plug(Scrybot.Scryfall.Cache.Middleware)
@@ -59,9 +60,10 @@ defmodule Scrybot.Scryfall.Api do
       )
       |> Embed.put_footer("#{status}", nil)
 
-    {:error, reason}
+    {:error, reason, ""}
   end
 
+  @spec cards_search(String.t(), [keyword]) :: {:ok, map} | error
   def cards_search(card_name, options \\ []) do
     query = [
       q: card_name,
@@ -73,6 +75,7 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
+  @spec cards_named(String.t(), boolean, [keyword]) :: {:ok, map} | error
   def cards_named(card_name, use_exact, options \\ []) do
     query = [
       case use_exact do
@@ -87,13 +90,15 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
-  def rulings(cardid) do
+  @spec rulings(String.t()) :: {:ok, map} | error
+  def rulings(card_id) do
     query = [format: "json"]
-    res = get("/cards/#{cardid}/rulings", query: query)
+    res = get("/cards/#{card_id}/rulings", query: query)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
 
+  @spec autocomplete(String.t()) :: {:ok, map} | error
   def autocomplete(partial_name) do
     query = [q: partial_name]
     res = get("/cards/autocomplete", query: query)

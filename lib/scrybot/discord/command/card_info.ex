@@ -1,11 +1,10 @@
 defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
-  require Logger
-  import Scrybot.LogMacros
+  use Scrybot.LogMacros
   alias Nostrum.Api
   alias Nostrum.Struct.{Embed, Message, User}
   alias Scrybot.Discord.{Colors, Emoji}
-  alias Scrybot.Discord.Command.CardInfo.Parser
+  alias Scrybot.Discord.Command.CardInfo.{Card, Formatter, Parser}
   alias Scrybot.Scryfall
 
   @behaviour Scrybot.Discord.Behaviour.Handler
@@ -31,25 +30,60 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @impl Scrybot.Discord.Behaviour.CommandHandler
   @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
+    debug("do_command")
     requests = Parser.tokenize(message.content, message)
 
-    for {mode, query, options} <- requests do
-      cond do
-        mode in [:search, :edhrec] ->
-          handle_search(query, options, message, mode)
+    case requests do
+      [] ->
+        :ok
 
-        mode in [:art, :fuzzy, :exact] ->
-          handle_card(query, options, message, mode)
+      _ ->
+        for {mode, query, options} <- requests do
+          mode
+          |> case do
+            :art ->
+              query
+              |> art(options, message)
+              |> Stream.map(fn x -> {mode, Card.from_map(x.body)} end)
+              |> Stream.map(fn x -> handle_maybe_ambiguous_art(x, query, message) end)
 
-        {:error, reason} = mode ->
-          send(Scrybot.Discord.FailureDispatcher, {:error, reason, message})
-      end
+            :fuzzy ->
+              with {:ok, info} <- fuzzy(query, options, message) do
+                {:card, Card.from_map(info.body)}
+              end
+
+            :exact ->
+              query
+              |> exact(options, message)
+              |> Stream.map(fn x -> {mode, Card.from_map(x.body)} end)
+              |> Stream.map(fn x -> handle_maybe_ambiguous(x, query, message) end)
+
+            # :edhrec ->
+            #  edhrec(query, options, message)
+
+            # :search ->
+            #  search(query, options, message)
+
+            :error ->
+              case options do
+                "ambiguous" -> ambiguous(query, message)
+                _ -> send(Scrybot.Discord.FailureDispatcher, {:error, query, message})
+              end
+          end
+        end
+        |> Formatter.format()
+        |> return(message)
+
+        :ok
     end
-
-    :ok
   end
 
-  defp handle_card(card_name, options, ctx, :fuzzy) do
+  defp fuzzy(card_name, options, ctx) do
+    debug("fuzzy")
+    debug(inspect(card_name))
+    debug(inspect(options))
+    debug(inspect(ctx))
+
     opts =
       for option <- options do
         case option do
@@ -67,12 +101,18 @@ defmodule Scrybot.Discord.Command.CardInfo do
       end
       |> Enum.reject(fn x -> x == :skip end)
 
-    card_name
-    |> Scryfall.Api.cards_named(false, opts)
-    |> handle_maybe_ambiguous(card_name, ctx)
+    t =
+      card_name
+      |> Scryfall.Api.cards_named(false, opts)
+
+    debug("T " <> inspect(t))
+
+    t
   end
 
-  defp handle_card(card_name, options, ctx, :exact) do
+  defp exact(card_name, options, ctx) do
+    debug("exact")
+
     opts =
       for option <- options do
         case option do
@@ -92,10 +132,11 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
     card_name
     |> Scryfall.Api.cards_named(true, opts)
-    |> handle_maybe_ambiguous(card_name, ctx)
   end
 
-  defp handle_card(card_name, options, ctx, :art) do
+  defp art(card_name, options, ctx) do
+    debug("art")
+
     opts =
       for option <- options do
         case option do
@@ -118,62 +159,72 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
     card_name
     |> Scryfall.Api.cards_named(false, opts)
-    |> handle_maybe_ambiguous_art(card_name, ctx)
   end
 
-  defp handle_card(card_name, ctx, :ambiguous) do
+  defp ambiguous(card_name, ctx) do
+    debug("ambiguous")
+
     card_name
     |> Scryfall.Api.autocomplete()
     |> return_alternate_cards(card_name, ctx)
   end
 
   defp handle_card(card_info, ctx) do
+    debug("handle_card")
+
     case card_info do
       {:ok, info} ->
         rulings =
           case Scryfall.Api.rulings(info.body["id"]) do
-            {:ok, %{body: resp}} -> resp["data"]
-            {:error, reason} -> notify_error(reason, ctx.channel_id)
+            {:ok, %{body: resp}} ->
+              resp["data"]
+
+            {:error, reason, _} ->
+              send(
+                Scrybot.Discord.FailureDispatcher,
+                {:warn, reason, ctx}
+              )
+
+              []
           end
 
-        return_card(info, rulings, ctx)
+        {info, rulings}
 
       {:error, message, _} ->
-        return_error(message, ctx)
-
-      {:error, message} ->
         return_error(message, ctx)
     end
   end
 
   defp handle_art(card_info, card_name, ctx) do
+    debug("handle_art")
+
     case card_info do
-      {:ok, info} ->
-        return_art(info, card_name, ctx)
-
-      {:error, message, _} ->
-        return_error(message, ctx)
-
-      {:error, message} ->
-        return_error(message, ctx)
+      {:ok, info} -> [{:art, dft_map(info, card_name)}]
+      {:error, message, _} -> [{:error, message}]
     end
   end
 
   defp handle_maybe_ambiguous(card_info, card_name, ctx) do
+    debug("handle_maybe_ambiguous")
+
     case card_info do
-      {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
+      {:error, _, "ambiguous"} -> ambiguous(card_name, ctx)
       _ -> handle_card(card_info, ctx)
     end
   end
 
   defp handle_maybe_ambiguous_art(card_info, card_name, ctx) do
+    debug("handle_maybe_ambiguous_art")
+
     case card_info do
-      {:error, _, "ambiguous"} -> handle_card(card_name, ctx, :ambiguous)
+      {:error, _, "ambiguous"} -> ambiguous(card_name, ctx)
       _ -> handle_art(card_info, card_name, ctx)
     end
   end
 
   defp handle_search(search_term, options, ctx, :search) do
+    debug("handle_search")
+
     opts =
       for option <- options do
         case option do
@@ -227,6 +278,8 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp handle_search(search_term, options, ctx, :edhrec) do
+    debug("handle_search 2")
+
     opts =
       for option <- options do
         case option do
@@ -282,129 +335,26 @@ defmodule Scrybot.Discord.Command.CardInfo do
   defp handle_search_results(results, ctx, mode \\ :search)
 
   defp handle_search_results({:ok, results}, ctx, mode) do
+    debug("handle_search_results")
     return_search_results(results, ctx, mode)
   end
 
-  defp handle_search_results({:error, reason}, ctx, _mode) do
-    notify_error(reason, ctx.channel_id)
+  defp handle_search_results({:error, reason, _}, ctx, _mode) do
+    debug("handle_search_results 2")
+
+    send(
+      Scrybot.Discord.FailureDispatcher,
+      {:error, reason, ctx}
+    )
   end
 
-  defp put_rulings(embed, []), do: embed
-
-  defp put_rulings(embed, [ruling | rulings]) do
-    embed
-    |> Embed.put_field("Ruling #{ruling["published_at"]}", Emoji.emojify(ruling["comment"]))
-    |> put_rulings(rulings)
-  end
-
-  defp put_legalities(embed, legalities) do
-    case legalities do
-      nil ->
-        embed
-
-      _ ->
-        legal_formats =
-          legalities
-          |> Map.to_list()
-          |> Enum.filter(fn {_, v} -> v == "legal" end)
-          |> Enum.map(fn {k, _} -> "- #{k}" end)
-
-        # Take every other entry, starting with the 0th
-        legal_group_1 =
-          legal_formats
-          |> Enum.take_every(2)
-          |> Enum.join("\n")
-
-        # Take every other entry, starting witht the 1st
-        legal_group_2 =
-          legal_formats
-          |> Enum.drop(1)
-          |> Enum.take_every(2)
-          |> Enum.join("\n")
-
-        case {legal_group_1, legal_group_2} do
-          {"", ""} ->
-            # There are no legal formats
-            embed
-
-          {_, ""} ->
-            # There is exactly one legal format
-            embed
-            |> Embed.put_field("Legal in", legal_group_1, true)
-
-          {_, _} ->
-            # There are at least 2 legal formats
-            embed
-            |> Embed.put_field("Legal in", legal_group_1, true)
-            |> Embed.put_field("\u200D", legal_group_2, true)
-        end
-    end
-  end
-
-  defp format_description(card) do
-    type = card["type_line"]
-
-    text =
-      case card["oracle_text"] do
-        nil ->
-          ""
-
-        oracle ->
-          oracle
-          |> String.replace("\n", "\n\n")
-          |> Emoji.emojify()
-      end
-
-    power = card["power"]
-    toughness = card["toughness"]
-
-    pt =
-      if power && toughness do
-        "**#{power}/#{toughness}**\n"
-      else
-        ""
-      end
-
-    case card["flavor_text"] do
-      nil -> "**#{type}**\n#{pt}#{text}"
-      flavor -> "**#{type}**\n#{pt}#{text}\n———\n_#{flavor}_"
-    end
-  end
-
-  defp md_escape(text) do
-    text
-    |> String.replace("_", "\\_")
-    |> String.replace("~", "\\~")
-    |> String.replace("*", "\\*")
-    |> String.replace("`", "\\`")
-    |> String.replace(">", "\\>")
-  end
-
-  defp fits_limits?(_info, rulings) do
-    # TODO make this smarter
-    # Currently this only checks if there are at least 5 rulings
-    # Ideally, this would check based on the total length of the rulings
-    #
-    # The total max length of an embed is 6000 chars (not graphemes!)
-    case length(rulings) do
-      x when x <= 5 -> true
-      _ -> false
-    end
-  end
-
-  defp footer do
-    case Enum.random(1..5000) do
-      x when x in 1..4999 -> "data sourced from Scryfall"
-      2500 -> "data forcefully ripped from the cold, dead hands of Scryfall"
-    end
-  end
-
-  defp return_card(%{body: %{"layout" => layout} = body}, rulings, ctx)
-       when layout in ["split", "flip", "transform", "double_faced_token"] do
-    [last_face | faces] = body["card_faces"] |> Enum.reverse()
+  defp return_card(%Card{layout: layout} = card, rulings, ctx)
+       when layout in [:split, :flip, :transform, :double_faced_token] do
+    debug("return_card")
+    [last_face | faces] = card.card_faces |> Enum.reverse()
 
     for face <- faces |> Enum.reverse() do
-      Map.merge(body, face)
+      Map.merge(card, face)
     end
     |> Enum.each(fn x ->
       return_card(x, [], ctx)
@@ -415,44 +365,42 @@ defmodule Scrybot.Discord.Command.CardInfo do
         :ok
 
       face ->
-        return_card(Map.merge(body, face), rulings, ctx)
+        return_card(Map.merge(card, face), rulings, ctx)
     end
   end
 
-  defp return_card(%{body: info}, rulings, ctx) do
-    return_card(info, rulings, ctx)
-  end
-
   defp return_card(info, rulings, ctx) do
+    debug("return_card 2")
+
     embeds =
-      case fits_limits?(info, rulings) do
+      case Formatter.fits_limits?(info, rulings) do
         true ->
           [
             %Embed{}
-            |> Embed.put_title(md_escape(info["name"]))
-            |> Embed.put_url(info["scryfall_uri"])
+            |> Embed.put_title(Formatter.md_escape(info.name))
+            |> Embed.put_url(info.scryfall_url)
             |> Embed.put_description(
-              Emoji.emojify(info["mana_cost"] <> "\n" <> format_description(info))
+              Emoji.emojify(info.mana_cost <> "\n" <> Formatter.card_description(info))
             )
-            |> put_legalities(info["legalities"])
-            |> Embed.put_thumbnail(info["image_uris"]["small"])
-            |> put_rulings(rulings)
-            |> Embed.put_footer(footer(), @scryfall_icon_uri)
+            |> Formatter.legalities(info.legalities)
+            |> Embed.put_thumbnail(info.image_uris.small)
+            |> Formatter.rulings(rulings)
+            |> Embed.put_footer(Formatter.footer(), @scryfall_icon_uri)
           ]
 
         false ->
           [
             %Embed{}
-            |> Embed.put_title(md_escape(info["name"]))
-            |> Embed.put_url(info["scryfall_uri"])
+            |> Embed.put_title(Formatter.md_escape(info.name))
+            |> Embed.put_url(info.scryfall_uri)
             |> Embed.put_description(
-              Emoji.emojify(info["mana_cost"] <> "\n" <> format_description(info))
+              Emoji.emojify(info.mana_cost <> "\n" <> Formatter.card_description(info))
             )
-            |> put_legalities(info["legalities"])
-            |> Embed.put_thumbnail(info["image_uris"]["normal"]),
+            |> Formatter.legalities(info.legalities)
+            |> Embed.put_thumbnail(info.image_uris.normal),
             %Embed{}
-            |> put_rulings(rulings)
-            |> Embed.put_footer(footer(), @scryfall_icon_uri)
+            |> Formatter.rulings(rulings)
+            |> Embed.put_footer(Formatter.footer(), @scryfall_icon_uri)
           ]
       end
 
@@ -461,51 +409,48 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  @spec return_art(map(), String.t(), Nostrum.Struct.Message.t()) :: :ok
-  defp return_art(%{body: %{"layout" => "double_faced_token"} = info}, card_name, ctx) do
-    for face <- info["card_faces"] do
+  defp dft_map(info = %Card{layout: "double_faced_token"}, card_name) do
+    debug("dft_map")
+
+    for face <- info.card_faces do
       if Scrybot.DamerauLevenshtein.equivalent?(
-           face["name"],
+           face.name,
            card_name,
            Integer.floor_div(String.length(card_name), 4)
          ) do
-        info
-        |> Map.merge(face)
-        |> return_art(ctx)
+        Map.merge(info, face)
       end
     end
-  end
-
-  defp return_art(%{body: %{"layout" => layout} = info}, _card_name, ctx)
-       when layout == "transform" do
-    for face <- info["card_faces"] do
-      Map.merge(info, face)
-    end
-    |> Enum.each(fn x ->
-      return_art(x, ctx)
+    |> Enum.filter(fn
+      nil -> false
+      _ -> true
     end)
   end
 
-  defp return_art(%{body: info}, _card_name, ctx) do
-    return_art(info, ctx)
+  defp dft_map(info, _), do: info
+
+  defp return([], ctx) do
+    debug("return")
+
+    send(
+      Scrybot.Discord.FailureDispatcher,
+      {:error, "The query resulted in no valid results. This is a bug.", ctx}
+    )
   end
 
-  defp return_art(info, ctx) do
-    embed =
-      %Embed{}
-      |> Embed.put_color(Colors.success())
-      |> Embed.put_title(info["name"])
-      |> Embed.put_field("Artist", info["artist"])
-      |> Embed.put_url(info["scryfall_uri"])
-      |> Embed.put_image(info["image_uris"]["art_crop"])
-      |> Embed.put_footer(footer(), @scryfall_icon_uri)
+  defp return(embeds, ctx) when is_list(embeds) do
+    debug("return 2")
 
-    Api.create_message(ctx.channel_id, embed: embed)
+    for embed <- embeds do
+      Api.create_message(ctx.channel_id, embed: embed)
+    end
   end
 
-  defp return_alternate_cards({:error, message}, _, ctx), do: return_error(message, ctx)
+  defp return_alternate_cards({:error, message, _}, _, ctx), do: return_error(message, ctx)
 
   defp return_alternate_cards({:ok, resp}, card_name, ctx) do
+    debug("return_alternate_cards")
+
     card_list =
       resp.body["data"]
       |> Enum.map(fn x -> "- #{x}" end)
@@ -527,6 +472,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp return_search_results(%{body: results}, ctx, :search) do
     # debug(inspect(results))
+    debug("return_search_results")
 
     card_list =
       results["data"]
@@ -549,6 +495,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp return_search_results(%{body: results}, ctx, :edhrec) do
     # debug(inspect(results))
+    debug("return_search_results 2")
 
     card_list =
       results["data"]
@@ -572,11 +519,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   defp return_error(message, ctx) do
+    debug("return_error")
     Api.create_message(ctx.channel_id, embed: message)
-  end
-
-  defp notify_error(reason, channel) do
-    error(inspect(reason))
-    Api.create_message(channel, embed: reason)
   end
 end

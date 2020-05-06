@@ -5,8 +5,8 @@ defmodule Scrybot.MixProject do
   def project do
     [
       app: :scrybot,
-      version: "0.7.0",
-      elixir: "~> 1.8",
+      version: "0.9.0",
+      elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer()
@@ -24,19 +24,20 @@ defmodule Scrybot.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
-      {:con_cache, "~> 0.13"},
+      {:nostrum, git: "https://github.com/kraigie/nostrum", ref: "master"},
+      # {:nostrum, git: "https://github.com/skwerlman/nostrum", ref: "dialyzer_fixes"},
+      {:con_cache, "~> 0.14"},
       {:jason, "~> 1.1"},
       {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
-      {:tesla, "~> 1.2"},
-      {:httpoison, "~> 1.4", override: true},
+      {:tesla, "~> 1.3"},
+      {:httpoison, "~> 1.6", override: true},
       {:nimble_parsec, "~> 0.5"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
-      {:distillery, "~> 2.0", runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.4", runtime: false, only: [:dev, :test]},
-      {:credo, "~> 1.0", runtime: false, only: [:dev, :test]}
+      {:distillery, "~> 2.1", runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.7", runtime: false, only: [:dev, :test]},
+      {:credo, "~> 1.1", runtime: false, only: [:dev, :test]}
     ]
   end
 

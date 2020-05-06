@@ -89,6 +89,7 @@ defmodule Scrybot.Discord.Emoji do
     {"{CHAOS}", "<:CHAOS:473719851731517450>"}
   ]
 
+  @spec emojify(text :: String.t()) :: String.t()
   def emojify(text), do: emojify(text, @emojis)
   defp emojify(text, []), do: text
 

@@ -1,6 +1,12 @@
 defmodule Scrybot.LogMacros do
   @moduledoc false
-  require Logger
+
+  defmacro __using__(_) do
+    quote do
+      require Logger
+      import Scrybot.LogMacros, only: [debug: 1, info: 1, warn: 1, error: 1]
+    end
+  end
 
   defmacro debug(msg) do
     quote do

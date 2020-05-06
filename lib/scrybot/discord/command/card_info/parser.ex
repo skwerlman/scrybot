@@ -17,17 +17,15 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
         }
 
   @spec parse(String.t(), term()) :: [lookup_tuple() | error_tuple()]
-  def parse(text, ctx) do
-    tokenize(text, ctx)
-  end
+  def parse(text, ctx), do: tokenize(text, ctx)
 
-  @spec tokenize(String.t(), term()) :: list()
+  @spec tokenize([String.t()] | String.t(), term()) :: [lookup_tuple() | error_tuple()]
   # return an empty list when no text found; end of recursion
-  def tokenize("", _ctx), do: []
+  def tokenize([], _ctx), do: []
 
   # handle default (fuzzy) searches
-  def tokenize("[[" <> term_and_rest, ctx) do
-    case term_and_rest |> String.split("]", parts: 3) do
+  def tokenize(["[", "[" | term_and_rest], ctx) do
+    case term_and_rest |> Enum.join() |> String.split("]", parts: 3) do
       [term, opts, rest] ->
         [{:fuzzy, term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
 
@@ -42,15 +40,15 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
   end
 
   # handle moded searches
-  def tokenize("[" <> <<mode_string::bytes-size(1)>> <> "[" <> term_and_rest, ctx) do
-    case term_and_rest |> String.split("]", parts: 3) do
+  def tokenize(["[", mode_string, "[" | term_and_rest], ctx) do
+    case term_and_rest |> Enum.join() |> String.split("]", parts: 3) do
       [term, opts, rest] ->
         [{mode(mode_string, ctx), term, tokenize_opts(opts, ctx)}] ++ tokenize(rest, ctx)
 
       _ ->
         send(
           FailureDispatcher,
-          {:warning, "Unmatched `[`. Some searches will be incorrect or skipped.", ctx}
+          {:warning, "Unmatched `[`! Some searches will be incorrect or skipped.", ctx}
         )
 
         []
@@ -58,7 +56,10 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
   end
 
   # discard unrecognized bytes
-  def tokenize(<<_garbage::bytes-size(1)>> <> rest, ctx), do: tokenize(rest, ctx)
+  def tokenize([_garbage | rest], ctx), do: tokenize(rest, ctx)
+
+  # auto-split strings to graphemes
+  def tokenize(string, ctx), do: tokenize(string |> String.graphemes(), ctx)
 
   @spec tokenize_opts(String.t(), term()) :: [opt()]
   def tokenize_opts("", _ctx), do: []
@@ -85,8 +86,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
   defp mode("=", _ctx), do: :exact
   defp mode("?", _ctx), do: :search
 
-  defp mode(mode, ctx) do
-    send(FailureDispatcher, {:warning, "Invalid mode: #{mode}", ctx})
-    {:error, :bad_mode}
+  defp mode(mode, _ctx) do
+    {:error, {:bad_mode, mode}}
   end
 end

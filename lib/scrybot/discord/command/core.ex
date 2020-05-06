@@ -1,6 +1,6 @@
 defmodule Scrybot.Discord.Command.Core do
   @moduledoc false
-  require Logger
+  use Scrybot.LogMacros
   alias Nostrum.Api
   alias Nostrum.Struct.Embed
   alias Scrybot.Discord.Colors
@@ -10,13 +10,14 @@ defmodule Scrybot.Discord.Command.Core do
 
   @impl Scrybot.Discord.Behaviour.Handler
   def init do
-    Logger.info("Core command set loaded")
+    info("Core command set loaded")
   end
 
   @impl Scrybot.Discord.Behaviour.Handler
   def allow_bots?, do: false
 
   @impl Scrybot.Discord.Behaviour.CommandHandler
+  @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(message) do
     case message.content do
       "!!quit now" ->
@@ -88,13 +89,16 @@ defmodule Scrybot.Discord.Command.Core do
       |> Embed.put_field("Dependencies", dep_vsns(), false)
       |> Embed.put_color(Colors.success())
 
-    Api.create_message(ctx.channel_id, embed: embed)
+    _ = Api.create_message(ctx.channel_id, embed: embed)
+
+    :ok
   end
 
   defp quit(ctx) do
     if ctx.author.id == 96_197_471_641_812_992 do
       {_, _} = Api.create_message(ctx.channel_id, content: "Exiting...")
       System.stop()
+      :ok
     end
   end
 end
