@@ -20,7 +20,7 @@ defmodule Scrybot.Discord.Command do
       :scrybot,
       :react_handlers,
       [
-        Scrybot.Discord.Command.Pinboard,
+        # Scrybot.Discord.Command.Pinboard,
         Scrybot.Discord.Command.Turtler3000
         # Scrybot.Discord.Command.Scoreboard
       ]
