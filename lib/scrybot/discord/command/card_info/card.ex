@@ -731,13 +731,17 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "watermark" => :watermark
   }
 
+  defp to_known_atom(atom) when is_atom(atom) do
+    {:ok, atom}
+  end
+
   defp to_known_atom(string) do
     case Map.fetch(@known_atom_mapping, string) do
       {:ok, atom} ->
         {:ok, atom}
 
       :error ->
-        warn("/!\\ discarding unrecognized key #{string}")
+        warn("/!\\ discarding unrecognized key #{inspect string}")
         :error
     end
   end

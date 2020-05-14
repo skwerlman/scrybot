@@ -36,11 +36,11 @@ defmodule Scrybot.Discord.Command.Core do
       Scrybot.deps()
       |> Enum.map(fn x -> ":#{x}$=> #{Scrybot.version(x)}" end)
 
-    dep_vsns({"```\n", deps})
+    dep_vsns("```\n", deps)
   end
 
-  defp dep_vsns({str, []}), do: (str <> "```") |> align()
-  defp dep_vsns({str, [dep | deps]}), do: dep_vsns({"#{str}#{dep}\n", deps})
+  defp dep_vsns(str, []), do: (str <> "```") |> align()
+  defp dep_vsns(str, [dep | deps]), do: dep_vsns("#{str}#{dep}\n", deps)
 
   # This code is kinda gross; i def want to rewrite it up at some point
   defp align(text) do
@@ -51,25 +51,25 @@ defmodule Scrybot.Discord.Command.Core do
 
     maxfields =
       fieldsbyrow
-      |> Enum.map(fn field -> length(field) end)
+      |> Stream.map(fn field -> length(field) end)
       |> Enum.max()
 
     colwidths =
       fieldsbyrow
-      |> Enum.map(fn x -> x ++ List.duplicate("", maxfields - length(x)) end)
-      |> List.zip()
+      |> Stream.map(fn x -> x ++ List.duplicate("", maxfields - length(x)) end)
+      |> Stream.zip()
       |> Enum.map(fn field ->
         field
         |> Tuple.to_list()
-        |> Enum.map(fn x -> String.length(x) end)
+        |> Stream.map(fn x -> String.length(x) end)
         |> Enum.max()
       end)
 
     fieldsbyrow
-    |> Enum.map(fn row ->
+    |> Stream.map(fn row ->
       row
-      |> Enum.zip(colwidths)
-      |> Enum.map(fn {field, width} -> String.pad_trailing(field, width) end)
+      |> Stream.zip(colwidths)
+      |> Stream.map(fn {field, width} -> String.pad_trailing(field, width) end)
       |> Enum.join(" ")
       |> String.trim()
     end)

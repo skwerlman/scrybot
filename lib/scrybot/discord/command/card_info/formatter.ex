@@ -103,13 +103,18 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
         |> Embed.put_footer(footer(), @scryfall_icon_uri)
 
       _ ->
-        Logger.warn("FACES " <> inspect(card.card_faces))
-
         card.card_faces
-        |> Stream.map(fn x -> struct(card, Map.from_struct(x)) end)
+        |> Stream.map(fn x -> Map.from_struct(x) end)
+        |> Stream.map(
+          fn x ->
+            x
+            |> Stream.filter(fn {_k, v} -> v != nil end)
+            |> Enum.into(%{})
+          end
+        )
+        |> Stream.map(fn x -> Map.merge(card, x) end)
         |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
         |> Stream.map(fn x -> Card.from_map(x) end)
-        # |> Stream.map(fn x -> debug("M1 " <> inspect x); x end)
         |> Enum.map(fn x -> format(:card, x) end)
     end
   end
