@@ -24,15 +24,14 @@ defmodule Scrybot.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nostrum, git: "https://github.com/kraigie/nostrum", ref: "master"},
-      # {:nostrum, git: "https://github.com/skwerlman/nostrum", ref: "dialyzer_fixes"},
+      {:nostrum, "~> 0.4"},
       {:con_cache, "~> 0.14"},
       {:jason, "~> 1.1"},
       {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.3"},
-      {:httpoison, "~> 1.6", override: true},
-      {:nimble_parsec, "~> 0.5"},
+      {:httpoison, "~> 1.7", override: true},
+      {:nimble_parsec, "~> 0.6"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 2.1", runtime: false},
