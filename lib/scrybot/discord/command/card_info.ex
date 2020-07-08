@@ -44,10 +44,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
           mode
           |> case do
             :art ->
-              query
-              |> art(options, message)
-              |> Stream.map(fn x -> {mode, Card.from_map(x.body)} end)
-              |> Stream.map(fn x -> handle_maybe_ambiguous_art(x, query, message) end)
+              with {:ok, info} <- art(query, options, message) do
+                {:art, Card.from_map(info.body)}
+              end
 
             :fuzzy ->
               with {:ok, info} <- fuzzy(query, options, message) do
@@ -55,16 +54,19 @@ defmodule Scrybot.Discord.Command.CardInfo do
               end
 
             :exact ->
-              query
-              |> exact(options, message)
-              |> Stream.map(fn x -> {mode, Card.from_map(x.body)} end)
-              |> Stream.map(fn x -> handle_maybe_ambiguous(x, query, message) end)
+              with {:ok, info} <- exact(query, options, message) do
+                {:card, Card.from_map(info.body)}
+              end
 
               # :edhrec ->
-              #  edhrec(query, options, message)
+              #   with {:ok, info} <- edhrec(query, options, message) do
+              #     {:list, Card.from_map(info.body)}
+              #   end
 
               # :search ->
-              #  search(query, options, message)
+              #   with {:ok, info} <- search(query, options, message) do
+              #     {:list, Card.from_map(info.body)}
+              #   end
           end
           |> case do
             {:error, embed, options} ->
@@ -172,273 +174,163 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Scryfall.Api.cards_named(false, opts)
   end
 
-  defp ambiguous(card_name, ctx) do
-    debug("ambiguous")
+  # defp handle_search(search_term, options, ctx, :search) do
+  #   debug("handle_search")
 
-    card_name
-    |> Scryfall.Api.autocomplete()
-    |> return_alternate_cards(card_name, ctx)
-  end
+  #   opts =
+  #     for option <- options do
+  #       case option do
+  #         {"unique", unique} when unique in ["cards", "art", "prints"] ->
+  #           {:unique, unique}
 
-  defp handle_card(card_info, ctx) do
-    debug("handle_card")
+  #         {"order", order}
+  #         when order in [
+  #                "name",
+  #                "set",
+  #                "released",
+  #                "rarity",
+  #                "color",
+  #                "usd",
+  #                "tix",
+  #                "eur",
+  #                "cmc",
+  #                "power",
+  #                "toughness",
+  #                "edhrec",
+  #                "artist"
+  #              ] ->
+  #           {:order, order}
 
-    case card_info do
-      {:ok, info} ->
-        rulings =
-          case Scryfall.Api.rulings(info.body["id"]) do
-            {:ok, %{body: resp}} ->
-              resp["data"]
+  #         {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+  #           {:dir, dir}
 
-            {:error, reason, _} ->
-              send(
-                Scrybot.Discord.FailureDispatcher,
-                {:warn, reason, ctx}
-              )
+  #         {"include", "extras"} ->
+  #           {:include_extras, true}
 
-              []
-          end
+  #         {"include", "multilingual"} ->
+  #           {:include_multilingual, true}
 
-        {info, rulings}
+  #         {"include", "variations"} ->
+  #           {:include_variations, true}
 
-      {:error, message, _} ->
-        return_error(message, ctx)
-    end
-  end
+  #         {name, val} ->
+  #           send(
+  #             Scrybot.Discord.FailureDispatcher,
+  #             {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+  #           )
 
-  defp handle_art(card_info, card_name, ctx) do
-    debug("handle_art")
+  #           :skip
+  #       end
+  #     end
+  #     |> Enum.reject(fn x -> x == :skip end)
 
-    case card_info do
-      {:ok, info} -> [{:art, dft_map(info, card_name)}]
-      {:error, message, _} -> [{:error, message}]
-    end
-  end
+  #   search_term
+  #   |> Scryfall.Api.cards_search(opts)
+  #   |> handle_search_results(ctx)
+  # end
 
-  defp handle_maybe_ambiguous(card_info, card_name, ctx) do
-    debug("handle_maybe_ambiguous")
+  # defp handle_search(search_term, options, ctx, :edhrec) do
+  #   debug("handle_search 2")
 
-    case card_info do
-      {:error, _, "ambiguous"} -> ambiguous(card_name, ctx)
-      _ -> handle_card(card_info, ctx)
-    end
-  end
+  #   opts =
+  #     for option <- options do
+  #       case option do
+  #         {"unique", unique} when unique in ["cards", "art", "prints"] ->
+  #           {:unique, unique}
 
-  defp handle_maybe_ambiguous_art(card_info, card_name, ctx) do
-    debug("handle_maybe_ambiguous_art")
+  #         {"order", order}
+  #         when order in [
+  #                "name",
+  #                "set",
+  #                "released",
+  #                "rarity",
+  #                "color",
+  #                "usd",
+  #                "tix",
+  #                "eur",
+  #                "cmc",
+  #                "power",
+  #                "toughness",
+  #                "edhrec",
+  #                "artist"
+  #              ] ->
+  #           {:order, order}
 
-    case card_info do
-      {:error, _, "ambiguous"} -> ambiguous(card_name, ctx)
-      _ -> handle_art(card_info, card_name, ctx)
-    end
-  end
+  #         {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+  #           {:dir, dir}
 
-  defp handle_search(search_term, options, ctx, :search) do
-    debug("handle_search")
+  #         {"include", "extras"} ->
+  #           {:include_extras, true}
 
-    opts =
-      for option <- options do
-        case option do
-          {"unique", unique} when unique in ["cards", "art", "prints"] ->
-            {:unique, unique}
+  #         {"include", "multilingual"} ->
+  #           {:include_multilingual, true}
 
-          {"order", order}
-          when order in [
-                 "name",
-                 "set",
-                 "released",
-                 "rarity",
-                 "color",
-                 "usd",
-                 "tix",
-                 "eur",
-                 "cmc",
-                 "power",
-                 "toughness",
-                 "edhrec",
-                 "artist"
-               ] ->
-            {:order, order}
+  #         {"include", "variations"} ->
+  #           {:include_variations, true}
 
-          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
-            {:dir, dir}
+  #         {name, val} ->
+  #           send(
+  #             Scrybot.Discord.FailureDispatcher,
+  #             {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+  #           )
 
-          {"include", "extras"} ->
-            {:include_extras, true}
+  #           :skip
+  #       end
+  #     end
+  #     |> Enum.reject(fn x -> x == :skip end)
 
-          {"include", "multilingual"} ->
-            {:include_multilingual, true}
+  #   search_term
+  #   |> Scryfall.Api.cards_search(opts)
+  #   |> handle_search_results(ctx, :edhrec)
+  # end
 
-          {"include", "variations"} ->
-            {:include_variations, true}
+  # defp return_search_results(%{body: results}, ctx, :search) do
+  #   # debug(inspect(results))
+  #   debug("return_search_results")
 
-          {name, val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
-            )
+  #   card_list =
+  #     results["data"]
+  #     |> Enum.to_list()
+  #     |> Enum.map(fn x -> "- #{x["name"]}" end)
+  #     |> Enum.take(50)
 
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
+  #   msg_body =
+  #     card_list
+  #     |> Enum.join("\n")
 
-    search_term
-    |> Scryfall.Api.cards_search(opts)
-    |> handle_search_results(ctx)
-  end
+  #   embed =
+  #     %Embed{}
+  #     |> Embed.put_color(Colors.info())
+  #     |> Embed.put_title("Search Results (#{length(card_list)} of #{results["total_cards"]})")
+  #     |> Embed.put_description("#{msg_body}")
 
-  defp handle_search(search_term, options, ctx, :edhrec) do
-    debug("handle_search 2")
+  #   Api.create_message(ctx.channel_id, embed: embed)
+  # end
 
-    opts =
-      for option <- options do
-        case option do
-          {"unique", unique} when unique in ["cards", "art", "prints"] ->
-            {:unique, unique}
+  # defp return_search_results(%{body: results}, ctx, :edhrec) do
+  #   # debug(inspect(results))
+  #   debug("return_search_results 2")
 
-          {"order", order}
-          when order in [
-                 "name",
-                 "set",
-                 "released",
-                 "rarity",
-                 "color",
-                 "usd",
-                 "tix",
-                 "eur",
-                 "cmc",
-                 "power",
-                 "toughness",
-                 "edhrec",
-                 "artist"
-               ] ->
-            {:order, order}
+  #   card_list =
+  #     results["data"]
+  #     |> Enum.to_list()
+  #     |> Enum.map(fn x -> "- **#{x["name"]}** (##{x["edhrec_rank"]})" end)
+  #     |> Enum.take(50)
 
-          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
-            {:dir, dir}
+  #   msg_body =
+  #     card_list
+  #     |> Enum.join("\n")
 
-          {"include", "extras"} ->
-            {:include_extras, true}
+  #   embed =
+  #     %Embed{}
+  #     |> Embed.put_color(Colors.info())
+  #     |> Embed.put_title(
+  #       "EDHREC Search Results (#{length(card_list)} of #{results["total_cards"]})"
+  #     )
+  #     |> Embed.put_description("#{msg_body}")
 
-          {"include", "multilingual"} ->
-            {:include_multilingual, true}
-
-          {"include", "variations"} ->
-            {:include_variations, true}
-
-          {name, val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
-            )
-
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
-
-    search_term
-    |> Scryfall.Api.cards_search(opts)
-    |> handle_search_results(ctx, :edhrec)
-  end
-
-  defp handle_search_results(results, ctx, mode \\ :search)
-
-  defp handle_search_results({:ok, results}, ctx, mode) do
-    debug("handle_search_results")
-    return_search_results(results, ctx, mode)
-  end
-
-  defp handle_search_results({:error, reason, _}, ctx, _mode) do
-    debug("handle_search_results 2")
-
-    send(
-      Scrybot.Discord.FailureDispatcher,
-      {:error, reason, ctx}
-    )
-  end
-
-  defp return_card(%Card{layout: layout} = card, rulings, ctx)
-       when layout in [:split, :flip, :transform, :double_faced_token] do
-    debug("return_card")
-    [last_face | faces] = card.card_faces |> Enum.reverse()
-
-    for face <- faces |> Enum.reverse() do
-      Map.merge(card, face)
-    end
-    |> Enum.each(fn x ->
-      return_card(x, [], ctx)
-    end)
-
-    case last_face do
-      nil ->
-        :ok
-
-      face ->
-        return_card(Map.merge(card, face), rulings, ctx)
-    end
-  end
-
-  defp return_card(info, rulings, ctx) do
-    debug("return_card 2")
-
-    embeds =
-      case Formatter.fits_limits?(info, rulings) do
-        true ->
-          [
-            %Embed{}
-            |> Embed.put_title(Formatter.md_escape(info.name))
-            |> Embed.put_url(info.scryfall_url)
-            |> Embed.put_description(
-              Emoji.emojify(info.mana_cost <> "\n" <> Formatter.card_description(info))
-            )
-            |> Formatter.legalities(info.legalities)
-            |> Embed.put_thumbnail(info.image_uris.small)
-            |> Formatter.rulings(rulings)
-            |> Embed.put_footer(Formatter.footer(), @scryfall_icon_uri)
-          ]
-
-        false ->
-          [
-            %Embed{}
-            |> Embed.put_title(Formatter.md_escape(info.name))
-            |> Embed.put_url(info.scryfall_uri)
-            |> Embed.put_description(
-              Emoji.emojify(info.mana_cost <> "\n" <> Formatter.card_description(info))
-            )
-            |> Formatter.legalities(info.legalities)
-            |> Embed.put_thumbnail(info.image_uris.normal),
-            %Embed{}
-            |> Formatter.rulings(rulings)
-            |> Embed.put_footer(Formatter.footer(), @scryfall_icon_uri)
-          ]
-      end
-
-    for embed <- embeds do
-      Api.create_message(ctx.channel_id, embed: embed)
-    end
-  end
-
-  defp dft_map(info = %Card{layout: "double_faced_token"}, card_name) do
-    debug("dft_map")
-
-    for face <- info.card_faces do
-      if Scrybot.DamerauLevenshtein.equivalent?(
-           face.name,
-           card_name,
-           Integer.floor_div(String.length(card_name), 4)
-         ) do
-        Map.merge(info, face)
-      end
-    end
-    |> Enum.filter(fn
-      nil -> false
-      _ -> true
-    end)
-  end
-
-  defp dft_map(info, _), do: info
+  #   Api.create_message(ctx.channel_id, embed: embed)
+  # end
 
   defp return([], ctx) do
     debug("return")
@@ -455,82 +347,5 @@ defmodule Scrybot.Discord.Command.CardInfo do
     for embed <- embeds do
       Api.create_message(ctx.channel_id, embed: embed)
     end
-  end
-
-  defp return_alternate_cards({:error, message, _}, _, ctx), do: return_error(message, ctx)
-
-  defp return_alternate_cards({:ok, resp}, card_name, ctx) do
-    debug("return_alternate_cards")
-
-    card_list =
-      resp.body["data"]
-      |> Enum.map(fn x -> "- #{x}" end)
-      |> Enum.join("\n")
-
-    embed =
-      %Embed{}
-      |> Embed.put_color(Colors.warning())
-      |> Embed.put_title("Ambiguous card name")
-      |> Embed.put_description("""
-      The name \"#{card_name}\" matches too many cards.
-      Did you mean one of these?
-
-      #{card_list}
-      """)
-
-    Api.create_message(ctx.channel_id, embed: embed)
-  end
-
-  defp return_search_results(%{body: results}, ctx, :search) do
-    # debug(inspect(results))
-    debug("return_search_results")
-
-    card_list =
-      results["data"]
-      |> Enum.to_list()
-      |> Enum.map(fn x -> "- #{x["name"]}" end)
-      |> Enum.take(50)
-
-    msg_body =
-      card_list
-      |> Enum.join("\n")
-
-    embed =
-      %Embed{}
-      |> Embed.put_color(Colors.info())
-      |> Embed.put_title("Search Results (#{length(card_list)} of #{results["total_cards"]})")
-      |> Embed.put_description("#{msg_body}")
-
-    Api.create_message(ctx.channel_id, embed: embed)
-  end
-
-  defp return_search_results(%{body: results}, ctx, :edhrec) do
-    # debug(inspect(results))
-    debug("return_search_results 2")
-
-    card_list =
-      results["data"]
-      |> Enum.to_list()
-      |> Enum.map(fn x -> "- **#{x["name"]}** (##{x["edhrec_rank"]})" end)
-      |> Enum.take(50)
-
-    msg_body =
-      card_list
-      |> Enum.join("\n")
-
-    embed =
-      %Embed{}
-      |> Embed.put_color(Colors.info())
-      |> Embed.put_title(
-        "EDHREC Search Results (#{length(card_list)} of #{results["total_cards"]})"
-      )
-      |> Embed.put_description("#{msg_body}")
-
-    Api.create_message(ctx.channel_id, embed: embed)
-  end
-
-  defp return_error(message, ctx) do
-    debug("return_error")
-    Api.create_message(ctx.channel_id, embed: message)
   end
 end
