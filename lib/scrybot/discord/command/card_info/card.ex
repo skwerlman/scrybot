@@ -609,9 +609,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
       # Logger.debug("CARD " <> inspect card)
       case {Map.fetch(card, Atom.to_string(k)), Map.fetch(card, k)} do
         {{:ok, v}, _} ->
-          Logger.debug("OK KV " <> inspect({k, v}))
-          Logger.debug("OK ACC " <> inspect(acc))
-
           case k do
             :all_parts ->
               %{acc | k => for(v2 <- v, do: v2 |> atomify_map() |> Related.from_map())}
@@ -631,8 +628,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
               acc
 
             {:all_parts, _} ->
-              Logger.debug("OK KV " <> inspect({k, v}))
-              Logger.debug("OK ACC " <> inspect(acc))
               %{acc | k => for(v2 <- v, do: v2 |> atomify_map() |> Related.from_map())}
 
             {:card_faces, _} ->
@@ -644,9 +639,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
               %{acc | k => atomify_map(v)}
           end
 
-        {_, _} = hi ->
-          Logger.debug("ACTUAL " <> inspect(hi))
-          Logger.debug("ERR K " <> inspect(k))
+        {_, _} ->
           acc
       end
     end)
@@ -741,7 +734,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
         {:ok, atom}
 
       :error ->
-        warn("/!\\ discarding unrecognized key #{inspect string}")
+        warn("/!\\ discarding unrecognized key #{inspect(string)}")
         :error
     end
   end

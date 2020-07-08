@@ -18,25 +18,13 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
 
   @spec format([{result_type(), Card.t() | {Card.t(), [Ruling.t()]}}] | %Stream{}) :: [Embed.t()]
   def format(cards) do
-    debug(inspect(cards))
-
-    t =
-      for {type, info} <- cards do
-        case info do
-          {card, rulings} ->
-            format(type, card, rulings)
-
-          card ->
-            debug("LT " <> inspect(type))
-            f = format(type, card)
-            debug("L " <> inspect(f))
-            f
-        end
+    for {type, info} <- cards do
+      case info do
+        {card, rulings} -> format(type, card, rulings)
+        card -> format(type, card)
       end
-      |> List.flatten()
-
-    debug("FT " <> inspect(t))
-    t
+    end
+    |> List.flatten()
   end
 
   @spec format(result_type(), Card.t(), [Ruling.t()]) :: Embed.t() | [Embed.t()]
@@ -105,13 +93,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
       _ ->
         card.card_faces
         |> Stream.map(fn x -> Map.from_struct(x) end)
-        |> Stream.map(
-          fn x ->
-            x
-            |> Stream.filter(fn {_k, v} -> v != nil end)
-            |> Enum.into(%{})
-          end
-        )
+        |> Stream.map(fn x ->
+          x
+          |> Stream.filter(fn {_k, v} -> v != nil end)
+          |> Enum.into(%{})
+        end)
         |> Stream.map(fn x -> Map.merge(card, x) end)
         |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
         |> Stream.map(fn x -> Card.from_map(x) end)
@@ -122,7 +108,23 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   def format(:list, card) do
   end
 
-  def format(:ambiguous, card) do
+  def format(:ambiguous, {{resp, query}}) do
+    info("HERE " <> inspect(resp))
+
+    card_list =
+      resp.body["data"]
+      |> Enum.map(fn x -> "- #{x}" end)
+      |> Enum.join("\n")
+
+    %Embed{}
+    |> Embed.put_color(Colors.warning())
+    |> Embed.put_title("Ambiguous query")
+    |> Embed.put_description("""
+    The query \"#{query}\" matches too many cards.
+    Did you mean one of these?
+
+    #{card_list}
+    """)
   end
 
   def format(:error, card) do

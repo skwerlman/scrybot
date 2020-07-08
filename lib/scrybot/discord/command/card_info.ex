@@ -38,7 +38,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
         :ok
 
       _ ->
-        for {mode, query, options} <- requests do
+        for request = {mode, query, options} <- requests do
+          debug("request: #{inspect(request)}")
+
           mode
           |> case do
             :art ->
@@ -58,17 +60,26 @@ defmodule Scrybot.Discord.Command.CardInfo do
               |> Stream.map(fn x -> {mode, Card.from_map(x.body)} end)
               |> Stream.map(fn x -> handle_maybe_ambiguous(x, query, message) end)
 
-            # :edhrec ->
-            #  edhrec(query, options, message)
+              # :edhrec ->
+              #  edhrec(query, options, message)
 
-            # :search ->
-            #  search(query, options, message)
-
-            :error ->
+              # :search ->
+              #  search(query, options, message)
+          end
+          |> case do
+            {:error, embed, options} ->
               case options do
-                "ambiguous" -> ambiguous(query, message)
-                _ -> send(Scrybot.Discord.FailureDispatcher, {:error, query, message})
+                "ambiguous" ->
+                  {:ok, resp} = Scryfall.Api.autocomplete(query)
+                  {:ambiguous, {{resp, query}}}
+
+                _ ->
+                  send(Scrybot.Discord.FailureDispatcher, {:error, query, message})
+                  # {:error, embed}
               end
+
+            card ->
+              card
           end
         end
         |> Formatter.format()
