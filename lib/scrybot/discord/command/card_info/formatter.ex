@@ -16,22 +16,29 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   @type error :: Scrybot.Scryfall.Api.error()
   @type info :: Card.t() | error()
 
-  @spec format([{result_type(), Card.t() | {Card.t(), [Ruling.t()]}}] | %Stream{}) :: [Embed.t()]
+  @spec format(
+          [
+            {result_type(),
+             Card.t() | {Card.t(), keyword()} | {Card.t(), keyword(), [Ruling.t()]}}
+          ]
+          | %Stream{}
+        ) :: [Embed.t()]
   def format(cards) do
     for {type, info} <- cards do
       case info do
-        {card, rulings} -> format(type, card, rulings)
-        card -> format(type, card)
+        {card, meta, rulings} -> format(type, card, meta, rulings)
+        {card, meta} -> format(type, card, meta)
+        card -> format(type, card, [])
       end
     end
     |> List.flatten()
   end
 
-  @spec format(result_type(), Card.t(), [Ruling.t()]) :: Embed.t() | [Embed.t()]
-  def format(:card, card, card_rulings) do
+  @spec format(result_type(), Card.t(), keyword(), [Ruling.t()]) :: Embed.t() | [Embed.t()]
+  def format(:card, card, meta, card_rulings) do
     case fits_limits?(card, card_rulings) do
       true ->
-        rulings(format(:card, card), card_rulings)
+        rulings(format(:card, card, meta), card_rulings)
 
       false ->
         [
@@ -50,14 +57,12 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     end
   end
 
-  def format(type, _, _) do
+  def format(type, _, _, _) do
     raise "Cannot apply rulings to a result of type #{inspect(type)}"
   end
 
-  @spec format(result_type(), Card.t()) :: Embed.t() | [Embed.t()]
-  def format(type, card)
-
-  def format(:art, card) do
+  @spec format(result_type(), Card.t(), keyword()) :: Embed.t() | [Embed.t()]
+  def format(:art, card, meta) do
     warn(inspect(card))
     warn(inspect(card.card_faces))
 
@@ -72,14 +77,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
         |> Embed.put_footer(footer(), @scryfall_icon_uri)
 
       _ ->
-        card.card_faces
-        |> Stream.map(fn x -> Map.merge(card, x) end)
-        |> Stream.map(fn x -> Map.replace!(x, :card_faces, nil) end)
-        |> Enum.map(fn x -> format(:art, x) end)
+        flat_format(:art, card, meta)
     end
   end
 
-  def format(:card, card) do
+  def format(:card, card, meta) do
     case card do
       %Card{card_faces: faces} when no(faces) ->
         %Embed{}
@@ -91,25 +93,16 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
         |> Embed.put_footer(footer(), @scryfall_icon_uri)
 
       _ ->
-        card.card_faces
-        |> Stream.map(fn x -> Map.from_struct(x) end)
-        |> Stream.map(fn x ->
-          x
-          |> Stream.filter(fn {_k, v} -> v != nil end)
-          |> Enum.into(%{})
-        end)
-        |> Stream.map(fn x -> Map.merge(card, x) end)
-        |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
-        |> Stream.map(fn x -> Card.from_map(x) end)
-        |> Enum.map(fn x -> format(:card, x) end)
+        flat_format(:card, card, meta)
     end
   end
 
-  def format(:list, card) do
+  def format(:list, _card, _meta) do
   end
 
-  def format(:ambiguous, {{resp, query}}) do
+  def format(:ambiguous, resp, query: query) do
     info("HERE " <> inspect(resp))
+    info("Q #{inspect(resp.query)}")
 
     card_list =
       resp.body["data"]
@@ -127,8 +120,53 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     """)
   end
 
-  def format(:error, card) do
+  def format(:error, card, _meta) do
     card
+  end
+
+  defp flat_format(type, %Card{layout: "double_faced_token"} = card, [query: query] = meta) do
+    debug("DFT")
+    debug(inspect(card))
+
+    card.card_faces
+    |> Stream.map(fn face ->
+      if Scrybot.DamerauLevenshtein.equivalent?(
+           face.name,
+           query,
+           Integer.floor_div(String.length(query), 4)
+         ) do
+        debug("MATCH")
+        Map.merge(card, face)
+      end
+    end)
+    |> Stream.filter(fn
+      nil -> false
+      _ -> true
+    end)
+    |> Stream.map(fn x -> Map.from_struct(x) end)
+    |> Stream.map(fn x ->
+      x
+      |> Stream.filter(fn {_k, v} -> v != nil end)
+      |> Enum.into(%{})
+    end)
+    |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
+    |> Stream.map(fn x -> Map.replace!(x, :layout, "REPLACED_DFT") end)
+    |> Stream.map(fn x -> Card.from_map(x) end)
+    |> Enum.map(fn x -> format(type, x, meta) end)
+  end
+
+  defp flat_format(type, card, meta) do
+    card.card_faces
+    |> Stream.map(fn x -> Map.from_struct(x) end)
+    |> Stream.map(fn x ->
+      x
+      |> Stream.filter(fn {_k, v} -> v != nil end)
+      |> Enum.into(%{})
+    end)
+    |> Stream.map(fn x -> Map.merge(card, x) end)
+    |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
+    |> Stream.map(fn x -> Card.from_map(x) end)
+    |> Enum.map(fn x -> format(type, x, meta) end)
   end
 
   @spec rulings(Embed.t(), [Ruling.t()]) :: Embed.t()

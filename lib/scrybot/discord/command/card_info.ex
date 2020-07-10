@@ -45,17 +45,17 @@ defmodule Scrybot.Discord.Command.CardInfo do
           |> case do
             :art ->
               with {:ok, info} <- art(query, options, message) do
-                {:art, Card.from_map(info.body)}
+                {:art, {Card.from_map(info.body), query: query}}
               end
 
             :fuzzy ->
               with {:ok, info} <- fuzzy(query, options, message) do
-                {:card, Card.from_map(info.body)}
+                {:card, {Card.from_map(info.body), query: query}}
               end
 
             :exact ->
               with {:ok, info} <- exact(query, options, message) do
-                {:card, Card.from_map(info.body)}
+                {:card, {Card.from_map(info.body), query: query}}
               end
 
               # :edhrec ->
@@ -69,11 +69,11 @@ defmodule Scrybot.Discord.Command.CardInfo do
               #   end
           end
           |> case do
-            {:error, embed, options} ->
+            {:error, _embed, options} ->
               case options do
                 "ambiguous" ->
                   {:ok, resp} = Scryfall.Api.autocomplete(query)
-                  {:ambiguous, {{resp, query}}}
+                  {:ambiguous, {resp, query: query}}
 
                 _ ->
                   send(Scrybot.Discord.FailureDispatcher, {:error, query, message})
