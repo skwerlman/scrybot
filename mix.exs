@@ -26,7 +26,7 @@ defmodule Scrybot.MixProject do
     [
       {:nostrum, "~> 0.4"},
       {:con_cache, "~> 0.14"},
-      {:jason, "~> 1.1"},
+      {:jason, "~> 1.2"},
       {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.3"},
@@ -35,8 +35,8 @@ defmodule Scrybot.MixProject do
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 2.1", runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.7", runtime: false, only: [:dev, :test]},
-      {:credo, "~> 1.1", runtime: false, only: [:dev, :test]}
+      {:dialyxir, "~> 1.0", runtime: false, only: [:dev, :test]},
+      {:credo, "~> 1.4", runtime: false, only: [:dev, :test]}
     ]
   end
 
