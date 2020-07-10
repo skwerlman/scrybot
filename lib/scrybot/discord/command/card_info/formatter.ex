@@ -65,7 +65,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
       %Card{card_faces: faces} when no(faces) ->
         %Embed{}
         |> Embed.put_color(Colors.success())
-        |> Embed.put_title(card.name)
+        |> Embed.put_title("#{card.name} (#{card.set |> String.upcase()})")
         |> Embed.put_field("Artist", card.artist)
         |> Embed.put_url(card.scryfall_uri)
         |> Embed.put_image(card.image_uris.art_crop)
