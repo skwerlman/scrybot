@@ -15,7 +15,7 @@ defmodule Scrybot.Scryfall.Api do
   plug(Tesla.Middleware.DecodeJson)
 
   defp handle_errors({:ok, %{body: body} = resp}) do
-    case resp.body["object"] do
+    case body["object"] do
       "error" ->
         b = body
         code = b["code"]
@@ -52,13 +52,16 @@ defmodule Scrybot.Scryfall.Api do
             "Connection refused!"
 
           :timeout ->
-            "Connection timed out!"
+            "Can we get an F in chat for scryfall?"
+
+          :invalid_uri ->
+            "We seem to have generated a bad URI. Please report this bug."
 
           _ ->
-            "Unknown error!"
+            "Unknown error! (`#{inspect status}`)"
         end
       )
-      |> Embed.put_footer("#{status}", nil)
+      |> Embed.put_footer("#{inspect status}", nil)
 
     {:error, reason, ""}
   end
