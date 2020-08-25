@@ -24,6 +24,7 @@ defmodule Scrybot.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:lib_judge, git: "https://github.com/skwerlman/lib_judge"},
       {:nostrum, "~> 0.4"},
       {:con_cache, "~> 0.14"},
       {:jason, "~> 1.2"},
@@ -31,7 +32,6 @@ defmodule Scrybot.MixProject do
       {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.3"},
       {:httpoison, "~> 1.7", override: true},
-      {:nimble_parsec, "~> 0.6"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 2.1", runtime: false},
