@@ -25,12 +25,14 @@ defmodule Scrybot.MixProject do
   defp deps do
     [
       {:lib_judge, git: "https://github.com/skwerlman/lib_judge"},
-      {:nostrum, "~> 0.4"},
+      # {:nostrum, path: "/mnt/code/nostrum"},
+      {:nostrum, git: "https://github.com/kraigie/nostrum"},
       {:con_cache, "~> 0.14"},
       {:jason, "~> 1.2"},
       {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
       {:tesla, "~> 1.3"},
+      {:toml, "~> 0.6"},
       {:httpoison, "~> 1.7", override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},

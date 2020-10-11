@@ -8,7 +8,8 @@ defmodule Scrybot.Discord.Command do
       :command_handlers,
       [
         Scrybot.Discord.Command.CardInfo,
-        Scrybot.Discord.Command.Core
+        Scrybot.Discord.Command.Core,
+        Scrybot.Discord.Command.Role
         # Scrybot.Discord.Command.Pinboard,
         # Scrybot.Discord.Command.Testing
       ]

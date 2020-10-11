@@ -58,10 +58,10 @@ defmodule Scrybot.Scryfall.Api do
             "We seem to have generated a bad URI. Please report this bug."
 
           _ ->
-            "Unknown error! (`#{inspect status}`)"
+            "Unknown error! (`#{inspect(status)}`)"
         end
       )
-      |> Embed.put_footer("#{inspect status}", nil)
+      |> Embed.put_footer("#{inspect(status)}", nil)
 
     {:error, reason, ""}
   end
