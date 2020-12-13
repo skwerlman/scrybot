@@ -15,8 +15,9 @@ defmodule Scrybot.Discord.Config do
   end
 
   def read_config(guild = %Guild{}) do
-    {conf_channel, _} = guild.channels
-    |> Enum.find(fn {_, %Channel{name: name}} -> name == "scry-config" end)
+    {conf_channel, _} =
+      guild.channels
+      |> Enum.find(fn {_, %Channel{name: name}} -> name == "scry-config" end)
 
     [msg] = Api.get_channel_messages!(conf_channel, 1)
 
