@@ -20,18 +20,21 @@ defmodule Scrybot.Discord.Command.Replacer do
   @impl Scrybot.Discord.Behaviour.CommandHandler
   # @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(message) when is_struct(message) do
-    embed =
+    msg =
       message.content
       |> Emoji.emojify()
       |> clean_links()
-      |> embed(message)
 
-    _ = Api.create_message!(message.channel_id, embed: embed)
+    if message.content != msg do
+      _ = Api.create_message!(message.channel_id, embed: embed(msg, message))
+      _ = Api.delete_message!(message)
+    end
 
     :ok
   end
 
   defp clean_links(msg) do
+    # TODO url rules
     msg
   end
 
