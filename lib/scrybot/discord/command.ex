@@ -9,7 +9,8 @@ defmodule Scrybot.Discord.Command do
       [
         Scrybot.Discord.Command.CardInfo,
         Scrybot.Discord.Command.Core,
-        Scrybot.Discord.Command.Role
+        Scrybot.Discord.Command.Replacer,
+        Scrybot.Discord.Command.Role,
         # Scrybot.Discord.Command.Pinboard,
         # Scrybot.Discord.Command.Testing
       ]
