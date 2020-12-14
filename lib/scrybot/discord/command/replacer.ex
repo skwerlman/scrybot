@@ -25,10 +25,11 @@ defmodule Scrybot.Discord.Command.Replacer do
       |> Emoji.emojify()
       |> clean_links()
 
-    if message.content != msg do
-      _ = Api.create_message!(message.channel_id, embed: embed(msg, message))
-      _ = Api.delete_message!(message)
-    end
+    _ =
+      if message.content != msg do
+        _ = Api.create_message!(message.channel_id, embed: embed(msg, message))
+        Api.delete_message!(message)
+      end
 
     :ok
   end
@@ -40,6 +41,7 @@ defmodule Scrybot.Discord.Command.Replacer do
 
   defp embed(processed_message, ctx) do
     user = ctx.author()
+
     %Embed{}
     |> Embed.put_author(user.username, "", User.avatar_url(user))
     |> Embed.put_color(Colors.info())
