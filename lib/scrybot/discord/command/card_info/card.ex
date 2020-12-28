@@ -221,7 +221,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
       |> Map.to_list()
       |> Enum.map_reduce(true, fn {k, v}, acc -> {v, acc && valid?(k, v)} end)
 
-    debug("done")
+    debug("done: #{inspect(valid)}")
 
     valid
   end
@@ -233,369 +233,376 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   # "defp valid?(:some_atom, value) do" 400 fucking times
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp valid?(key, value) do
-    debug("checking key #{inspect(key)}")
+    valid =
+      case key do
+        :all_parts ->
+          (&Related.valid?/1)
+          |> list_of()
+          |> nilable()
+          |> validate(value)
 
-    case key do
-      :all_parts ->
-        (&Related.valid?/1)
-        |> list_of()
-        |> nilable()
-        |> validate(value)
+        :arena_id ->
+          non_neg_integer()
+          |> nilable()
+          |> validate(value)
 
-      :arena_id ->
-        non_neg_integer()
-        |> nilable()
-        |> validate(value)
-
-      :artist ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :booster ->
-        is_boolean(value)
-
-      :border_color ->
-        value in ["black", "borderless", "gold", "silver", "white"]
-
-      :card_back_id ->
-        uuid().(value)
-
-      :card_faces ->
-        (&Face.valid?/1)
-        |> list_of()
-        |> nilable()
-        |> validate(value)
-
-      :cmc ->
-        is_number(value)
-
-      :collector_number ->
-        printable().(value)
-
-      :color_identity ->
-        color()
-        |> list_of()
-        |> validate(value)
-
-      :color_indicator ->
-        color()
-        |> list_of()
-        |> nilable()
-        |> validate(value)
-
-      :colors ->
-        color()
-        |> list_of()
-        |> nilable()
-        |> validate(value)
-
-      :digital ->
-        is_boolean(value)
-
-      :edhrec_rank ->
-        non_neg_integer()
-        |> nilable()
-        |> validate(value)
-
-      :flavor_text ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :foil ->
-        is_boolean(value)
-
-      :frame ->
-        value in ["1993", "1997", "2003", "2015", "future"]
-
-      :frame_effects ->
-        value in [
-          "legendary",
-          "miracle",
-          "nyxtouched",
-          "draft",
-          "devoid",
-          "tombstone",
-          "colorshifted",
-          "sunmoondfc",
-          "compasslanddfc",
-          "originpwdfc",
-          "mooneldrazidfc",
-          "moonreversemoondfc",
-          "showcase",
-          "extendedart",
-          nil
-        ]
-
-      :full_art ->
-        is_boolean(value)
-
-      :games ->
-        fn x -> x in ["paper", "arena", "mtgo"] end
-        |> list_of()
-        |> validate(value)
-
-      :hand_modifier ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :highres_image ->
-        is_boolean(value)
-
-      :id ->
-        uuid().(value)
-
-      :illustration_id ->
-        uuid()
-        |> nilable()
-        |> validate(value)
-
-      :image_uris ->
-        (&is_atom/1)
-        |> map_of(uri())
-        |> nilable()
-        |> validate(value)
-
-      :lang ->
-        printable().(value)
-
-      :layout ->
-        value in [
-          "normal",
-          "split",
-          "flip",
-          "transform",
-          "meld",
-          "leveler",
-          "saga",
-          "adventure",
-          "planar",
-          "scheme",
-          "vanguard",
-          "token",
-          "double_faced_token",
-          "emblem",
-          "augment",
-          "host",
-          "art_series",
-          "double_sided"
-        ]
-
-      :legalities ->
-        (&is_atom/1)
-        |> map_of(fn v -> v in ["legal", "not_legal", "restricted", "banned"] end)
-        |> validate(value)
-
-      :life_modifier ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :loyalty ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :mana_cost ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :mtgo_foil_id ->
-        non_neg_integer()
-        |> nilable()
-        |> validate(value)
-
-      :mtgo_id ->
-        non_neg_integer()
-        |> nilable()
-        |> validate(value)
-
-      :multiverse_ids ->
-        non_neg_integer()
-        |> list_of()
-        |> nilable()
-        |> validate(value)
-
-      :name ->
-        printable().(value)
-
-      :nonfoil ->
-        is_boolean(value)
-
-      :object ->
-        value == "card"
-
-      :oracle_id ->
-        uuid().(value)
-
-      :oracle_text ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :oversized ->
-        is_boolean(value)
-
-      :power ->
-        printable()
-        |> nilable()
-        |> validate(value)
-
-      :preview ->
-        map_of(
-          fn k -> k in [:previewed_at, :source_uri, :source] end,
+        :artist ->
           printable()
-        )
-        |> nilable()
-        |> validate(value)
+          |> nilable()
+          |> validate(value)
 
-      :prices ->
-        map_of(
-          fn k -> k in [:usd, :usd_foil, :eur, :tix] end,
-          printable() |> nilable()
-        )
-        |> validate(value)
+        :booster ->
+          is_boolean(value)
 
-      :printed_name ->
-        printable()
-        |> nilable()
-        |> validate(value)
+        :border_color ->
+          value in ["black", "borderless", "gold", "silver", "white"]
 
-      :printed_text ->
-        printable()
-        |> nilable()
-        |> validate(value)
+        :card_back_id ->
+          uuid().(value)
 
-      :printed_type_line ->
-        printable()
-        |> nilable()
-        |> validate(value)
+        :card_faces ->
+          (&Face.valid?/1)
+          |> list_of()
+          |> nilable()
+          |> validate(value)
 
-      :prints_search_uri ->
-        uri().(value)
+        :cmc ->
+          is_number(value)
 
-      :promo ->
-        is_boolean(value)
+        :collector_number ->
+          printable().(value)
 
-      :promo_types ->
-        # TODO tighten this check a bit
-        printable()
-        |> list_of()
-        |> nilable()
-        |> validate(value)
+        :color_identity ->
+          color()
+          |> list_of()
+          |> validate(value)
 
-      :purchase_uris ->
-        map_of(
-          fn k -> k in [:cardhoarder, :cardmarket, :tcgplayer] end,
-          uri()
-        )
-        |> validate(value)
+        :color_indicator ->
+          color()
+          |> list_of()
+          |> nilable()
+          |> validate(value)
 
-      :rarity ->
-        value in ["common", "uncommon", "rare", "mythic"]
+        :colors ->
+          color()
+          |> list_of()
+          |> nilable()
+          |> validate(value)
 
-      :related_uris ->
-        map_of(
-          fn k -> k in [:edhrec, :gatherer, :mtgtop8, :tcgplayer_decks] end,
-          uri()
-        )
-        |> validate(value)
+        :digital ->
+          is_boolean(value)
 
-      :released_at ->
-        printable().(value)
+        :edhrec_rank ->
+          non_neg_integer()
+          |> nilable()
+          |> validate(value)
 
-      :reprint ->
-        is_boolean(value)
+        :flavor_text ->
+          printable()
+          |> nilable()
+          |> validate(value)
 
-      :reserved ->
-        is_boolean(value)
+        :foil ->
+          is_boolean(value)
 
-      :rulings_uri ->
-        uri().(value)
+        :frame ->
+          value in ["1993", "1997", "2003", "2015", "future"]
 
-      :scryfall_set_uri ->
-        uri().(value)
+        :frame_effects ->
+          value in [
+            "legendary",
+            "miracle",
+            "nyxtouched",
+            "draft",
+            "devoid",
+            "tombstone",
+            "colorshifted",
+            "sunmoondfc",
+            "compasslanddfc",
+            "originpwdfc",
+            "mooneldrazidfc",
+            "moonreversemoondfc",
+            "showcase",
+            "extendedart",
+            nil
+          ]
 
-      :scryfall_uri ->
-        uri().(value)
+        :full_art ->
+          is_boolean(value)
 
-      :set ->
-        printable().(value)
+        :games ->
+          fn x -> x in ["paper", "arena", "mtgo"] end
+          |> list_of()
+          |> validate(value)
 
-      :set_name ->
-        printable().(value)
+        :hand_modifier ->
+          printable()
+          |> nilable()
+          |> validate(value)
 
-      :set_search_uri ->
-        uri().(value)
+        :highres_image ->
+          is_boolean(value)
 
-      :set_type ->
-        value in [
-          "core",
-          "expansion",
-          "masters",
-          "masterpiece",
-          "from_the_vault",
-          "spellbook",
-          "premium_deck",
-          "duel_deck",
-          "draft_innovation",
-          "treasure_chest",
-          "commander",
-          "planechase",
-          "archenemy",
-          "vanguard",
-          "funny",
-          "starter",
-          "box",
-          "promo",
-          "token",
-          "memorabilia"
-        ]
+        :id ->
+          uuid().(value)
 
-      :set_uri ->
-        uri().(value)
+        :illustration_id ->
+          uuid()
+          |> nilable()
+          |> validate(value)
 
-      :story_spotlight ->
-        is_boolean(value)
+        :image_uris ->
+          (&is_atom/1)
+          |> map_of(uri())
+          |> nilable()
+          |> validate(value)
 
-      :tcgplayer_id ->
-        non_neg_integer()
-        |> nilable()
-        |> validate(value)
+        :lang ->
+          printable().(value)
 
-      :textless ->
-        is_boolean(value)
+        :layout ->
+          value in [
+            "normal",
+            "split",
+            "flip",
+            "transform",
+            "meld",
+            "leveler",
+            "saga",
+            "adventure",
+            "planar",
+            "scheme",
+            "vanguard",
+            "token",
+            "double_faced_token",
+            "emblem",
+            "augment",
+            "host",
+            "art_series",
+            "double_sided",
+            # this one is used internally by the formatter
+            "REPLACED_DFT"
+          ]
 
-      :toughness ->
-        printable()
-        |> nilable()
-        |> validate(value)
+        :legalities ->
+          (&is_atom/1)
+          |> map_of(fn v -> v in ["legal", "not_legal", "restricted", "banned"] end)
+          |> validate(value)
 
-      :type_line ->
-        printable().(value)
+        :life_modifier ->
+          printable()
+          |> nilable()
+          |> validate(value)
 
-      :uri ->
-        uri().(value)
+        :loyalty ->
+          printable()
+          |> nilable()
+          |> validate(value)
 
-      :variation ->
-        is_boolean(value)
+        :mana_cost ->
+          printable()
+          |> nilable()
+          |> validate(value)
 
-      :variation_of ->
-        printable()
-        |> nilable()
-        |> validate(value)
+        :mtgo_foil_id ->
+          non_neg_integer()
+          |> nilable()
+          |> validate(value)
 
-      :watermark ->
-        printable()
-        |> nilable()
-        |> validate(value)
+        :mtgo_id ->
+          non_neg_integer()
+          |> nilable()
+          |> validate(value)
 
-      :__struct__ ->
-        __MODULE__
+        :multiverse_ids ->
+          non_neg_integer()
+          |> list_of()
+          |> nilable()
+          |> validate(value)
+
+        :name ->
+          printable().(value)
+
+        :nonfoil ->
+          is_boolean(value)
+
+        :object ->
+          value == "card"
+
+        :oracle_id ->
+          uuid().(value)
+
+        :oracle_text ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :oversized ->
+          is_boolean(value)
+
+        :power ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :preview ->
+          map_of(
+            fn k -> k in [:previewed_at, :source_uri, :source] end,
+            printable()
+          )
+          |> nilable()
+          |> validate(value)
+
+        :prices ->
+          map_of(
+            fn k -> k in [:usd, :usd_foil, :eur, :tix] end,
+            printable() |> nilable()
+          )
+          |> validate(value)
+
+        :printed_name ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :printed_text ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :printed_type_line ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :prints_search_uri ->
+          uri().(value)
+
+        :promo ->
+          is_boolean(value)
+
+        :promo_types ->
+          # TODO tighten this check a bit
+          printable()
+          |> list_of()
+          |> nilable()
+          |> validate(value)
+
+        :purchase_uris ->
+          map_of(
+            fn k -> k in [:cardhoarder, :cardmarket, :tcgplayer] end,
+            uri()
+          )
+          |> validate(value)
+
+        :rarity ->
+          value in ["common", "uncommon", "rare", "mythic"]
+
+        :related_uris ->
+          map_of(
+            fn k -> k in [:edhrec, :gatherer, :mtgtop8, :tcgplayer_decks] end,
+            uri()
+          )
+          |> validate(value)
+
+        :released_at ->
+          printable().(value)
+
+        :reprint ->
+          is_boolean(value)
+
+        :reserved ->
+          is_boolean(value)
+
+        :rulings_uri ->
+          uri().(value)
+
+        :scryfall_set_uri ->
+          uri().(value)
+
+        :scryfall_uri ->
+          uri().(value)
+
+        :set ->
+          printable().(value)
+
+        :set_name ->
+          printable().(value)
+
+        :set_search_uri ->
+          uri().(value)
+
+        :set_type ->
+          value in [
+            "core",
+            "expansion",
+            "masters",
+            "masterpiece",
+            "from_the_vault",
+            "spellbook",
+            "premium_deck",
+            "duel_deck",
+            "draft_innovation",
+            "treasure_chest",
+            "commander",
+            "planechase",
+            "archenemy",
+            "vanguard",
+            "funny",
+            "starter",
+            "box",
+            "promo",
+            "token",
+            "memorabilia"
+          ]
+
+        :set_uri ->
+          uri().(value)
+
+        :story_spotlight ->
+          is_boolean(value)
+
+        :tcgplayer_id ->
+          non_neg_integer()
+          |> nilable()
+          |> validate(value)
+
+        :textless ->
+          is_boolean(value)
+
+        :toughness ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :type_line ->
+          printable().(value)
+
+        :uri ->
+          uri().(value)
+
+        :variation ->
+          is_boolean(value)
+
+        :variation_of ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :watermark ->
+          printable()
+          |> nilable()
+          |> validate(value)
+
+        :__struct__ ->
+          __MODULE__
+      end
+
+    if !valid do
+      warn("key validation failed: #{inspect(key)} => #{inspect(value)}")
     end
+
+    valid
   end
 
   @spec from_map(map) :: __MODULE__.t()
@@ -606,7 +613,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     struct = struct(__MODULE__)
 
     Enum.reduce(Map.to_list(struct), struct, fn {k, _}, acc ->
-      # Logger.debug("CARD " <> inspect card)
       case {Map.fetch(card, Atom.to_string(k)), Map.fetch(card, k)} do
         {{:ok, v}, _} ->
           case k do
@@ -615,7 +621,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
             :card_faces ->
               t = for(v2 <- v, do: v2 |> atomify_map() |> Face.from_map())
-              Logger.warn(inspect(t))
               %{acc | k => t}
 
             _ ->
@@ -632,7 +637,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
             {:card_faces, _} ->
               t = for(v2 <- v, do: v2 |> atomify_map() |> Face.from_map())
-              Logger.warn(inspect(t))
               %{acc | k => t}
 
             _ ->
