@@ -117,6 +117,22 @@ defmodule Scrybot.Discord.Command do
 
     debug(inspect(res))
 
+    case res do
+      {:error, _reason} ->
+        Nostrum.Api.create_message(message.channel_id, """
+        :bomb: Sorry, an internal error occurred.
+
+        `#{inspect(err)}`
+
+        Details could not be uploaded due to size. Please check the log.
+
+        msgref `#{inspect(message.id)}`
+        """)
+
+      _ ->
+        :ok
+    end
+
     error(errmsg)
     error(trace)
   end
