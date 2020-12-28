@@ -103,7 +103,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
       |> Enum.map(fn x -> x["name"] end)
       |> Enum.take(50)
 
-    count = resp["data"] |> Enum.count()
+    count = resp["total_cards"]
     count2 = card_list |> Enum.count()
 
     %Embed{}
