@@ -55,32 +55,9 @@ defmodule Scrybot.Discord.Command do
             m ->
               module.do_command(m)
           end
-        rescue
-          e ->
-            errmsg =
-              case message do
-                %Nostrum.Struct.Message{} ->
-                  "Command execution failed for: #{inspect(message.content)}"
-
-                _ ->
-                  "Command execution failed for: #{inspect(message)}"
-              end
-
-            trace = Exception.format(:error, e, __STACKTRACE__)
-
-            error(errmsg)
-            error(trace)
-
-            Nostrum.Api.create_message(message.channel_id, """
-            :bomb: Sorry, an internal error occurred.
-
-            `#{inspect(e)}`
-
-            **Details:**
-            ```
-            #{trace}
-            ```
-            """)
+        catch
+          kind, e ->
+            bomb(e, Exception.format(kind, e, __STACKTRACE__), message)
         end
       end)
 
@@ -114,5 +91,33 @@ defmodule Scrybot.Discord.Command do
     |> Stream.concat()
     |> Stream.uniq()
     |> Enum.each(&init_once(&1))
+  end
+
+  defp bomb(err, trace, message) do
+    errmsg =
+      case message do
+        %Nostrum.Struct.Message{} ->
+          "Command execution failed for: #{inspect(message.content)}"
+
+        _ ->
+          "Command execution failed for: #{inspect(message)}"
+      end
+
+    res =
+      Nostrum.Api.create_message(message.channel_id, """
+      :bomb: Sorry, an internal error occurred.
+
+      `#{inspect(err)}`
+
+      **Details:**
+      ```
+      #{trace}
+      ```
+      """)
+
+    debug(inspect(res))
+
+    error(errmsg)
+    error(trace)
   end
 end
