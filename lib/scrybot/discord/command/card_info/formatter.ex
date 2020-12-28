@@ -150,8 +150,10 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
       |> Enum.into(%{})
     end)
     |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
+    |> Stream.map(fn x -> Map.replace!(x, :object, "card") end)
     |> Stream.map(fn x -> Map.replace!(x, :layout, "REPLACED_DFT") end)
     |> Stream.map(fn x -> Card.from_map(x) end)
+    |> Stream.filter(fn x -> Card.valid?(x) end)
     |> Enum.map(fn x -> format(type, x, meta) end)
   end
 
@@ -165,7 +167,9 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     end)
     |> Stream.map(fn x -> Map.merge(card, x) end)
     |> Stream.map(fn x -> Map.replace!(x, :card_faces, []) end)
+    |> Stream.map(fn x -> Map.replace!(x, :object, "card") end)
     |> Stream.map(fn x -> Card.from_map(x) end)
+    |> Stream.filter(fn x -> Card.valid?(x) end)
     |> Enum.map(fn x -> format(type, x, meta) end)
   end
 
