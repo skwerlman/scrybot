@@ -124,7 +124,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     card
   end
 
-  defp flat_format(type, %Card{layout: "double_faced_token"} = card, [query: query] = meta) do
+  defp flat_format(type, card = %Card{layout: "double_faced_token"}, meta = [query: query]) do
     debug("DFT")
     debug(inspect(card))
 
