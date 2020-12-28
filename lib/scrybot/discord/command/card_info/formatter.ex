@@ -188,7 +188,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
         legal_formats =
           legalities
           |> Map.to_list()
-          |> Enum.filter(fn {_, v} -> v == "legal" end)
+          |> Stream.filter(fn {_, v} -> v == "legal" end)
           |> Enum.map(fn {k, _} -> "- #{k}" end)
 
         # Take every other entry, starting with the 0th
