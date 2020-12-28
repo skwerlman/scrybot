@@ -44,8 +44,15 @@ defmodule Scrybot.Discord.Command.CardInfo do
                   mode
 
                 mode ->
-                  with {:ok, info} <- apply(__MODULE__, mode, [query, options, message]) do
-                    {mode_map(mode), {Card.from_map(info.body), query: query}}
+                  with {:ok, info} <- apply(__MODULE__, mode, [query, options, message]),
+                       mapped_mode <- mode_map(mode) do
+                    case mapped_mode do
+                      :list ->
+                        {mapped_mode, {info.body, query: query}}
+
+                      _ ->
+                        {mapped_mode, {Card.from_map(info.body), query: query}}
+                    end
                   end
               end).()
           |> case do
@@ -175,60 +182,61 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Scryfall.Api.cards_named(false, opts)
   end
 
-  # defp handle_search(search_term, options, ctx, :search) do
-  #   debug("handle_search")
+  @spec search(binary, any, any) ::
+          {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
+  def search(search_term, options, ctx) do
+    debug("search")
 
-  #   opts =
-  #     for option <- options do
-  #       case option do
-  #         {"unique", unique} when unique in ["cards", "art", "prints"] ->
-  #           {:unique, unique}
+    opts =
+      for option <- options do
+        case option do
+          {"unique", unique} when unique in ["cards", "art", "prints"] ->
+            {:unique, unique}
 
-  #         {"order", order}
-  #         when order in [
-  #                "name",
-  #                "set",
-  #                "released",
-  #                "rarity",
-  #                "color",
-  #                "usd",
-  #                "tix",
-  #                "eur",
-  #                "cmc",
-  #                "power",
-  #                "toughness",
-  #                "edhrec",
-  #                "artist"
-  #              ] ->
-  #           {:order, order}
+          {"order", order}
+          when order in [
+                 "name",
+                 "set",
+                 "released",
+                 "rarity",
+                 "color",
+                 "usd",
+                 "tix",
+                 "eur",
+                 "cmc",
+                 "power",
+                 "toughness",
+                 "edhrec",
+                 "artist"
+               ] ->
+            {:order, order}
 
-  #         {"dir", dir} when dir in ["auto", "asc", "desc"] ->
-  #           {:dir, dir}
+          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
+            {:dir, dir}
 
-  #         {"include", "extras"} ->
-  #           {:include_extras, true}
+          {"include", "extras"} ->
+            {:include_extras, true}
 
-  #         {"include", "multilingual"} ->
-  #           {:include_multilingual, true}
+          {"include", "multilingual"} ->
+            {:include_multilingual, true}
 
-  #         {"include", "variations"} ->
-  #           {:include_variations, true}
+          {"include", "variations"} ->
+            {:include_variations, true}
 
-  #         {name, val} ->
-  #           send(
-  #             Scrybot.Discord.FailureDispatcher,
-  #             {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
-  #           )
+          {name, val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+            )
 
-  #           :skip
-  #       end
-  #     end
-  #     |> Enum.reject(fn x -> x == :skip end)
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
 
-  #   search_term
-  #   |> Scryfall.Api.cards_search(opts)
-  #   |> handle_search_results(ctx)
-  # end
+    search_term
+    |> Scryfall.Api.cards_search(opts)
+  end
 
   # defp handle_search(search_term, options, ctx, :edhrec) do
   #   debug("handle_search 2")
@@ -337,7 +345,8 @@ defmodule Scrybot.Discord.Command.CardInfo do
     case mode do
       :fuzzy -> :card
       :exact -> :card
-      :edhrec -> :search
+      :edhrec -> :list
+      :search -> :list
       _ -> mode
     end
   end

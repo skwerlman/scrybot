@@ -97,7 +97,19 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     end
   end
 
-  def format(:list, _card, _meta) do
+  def format(:list, resp, _meta) do
+    card_list =
+      resp["data"]
+      |> Enum.map(fn x -> x["name"] end)
+      |> Enum.take(50)
+
+    count = resp["data"] |> Enum.count()
+    count2 = card_list |> Enum.count()
+
+    %Embed{}
+    |> Embed.put_color(Colors.success())
+    |> Embed.put_title("Showing results 1-#{count2} of #{count}")
+    |> Embed.put_description(card_list |> Enum.join("\n"))
   end
 
   def format(:ambiguous, resp, query: query) do
