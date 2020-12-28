@@ -3,14 +3,11 @@ defmodule Scrybot.Discord.Command.CardInfo do
   use Scrybot.LogMacros
   alias Nostrum.Api
   alias Nostrum.Struct.{Embed, Message, User}
-  alias Scrybot.Discord.{Colors, Emoji}
   alias Scrybot.Discord.Command.CardInfo.{Card, Formatter, Parser}
   alias Scrybot.Scryfall
 
   @behaviour Scrybot.Discord.Behaviour.Handler
   @behaviour Scrybot.Discord.Behaviour.CommandHandler
-
-  @scryfall_icon_uri "https://cdn.discordapp.com/app-icons/268547439714238465/f13c4408ead703ef3940bc7e21b91e2b.png"
 
   @doc false
   @impl Scrybot.Discord.Behaviour.Handler
@@ -42,43 +39,42 @@ defmodule Scrybot.Discord.Command.CardInfo do
           debug("request: #{inspect(request)}")
 
           mode
+          |> (fn
+                {:error, _} ->
+                  mode
+
+                mode ->
+                  with {:ok, info} <- apply(__MODULE__, mode, [query, options, message]) do
+                    {mode_map(mode), {Card.from_map(info.body), query: query}}
+                  end
+              end).()
           |> case do
-            :art ->
-              with {:ok, info} <- art(query, options, message) do
-                {:art, {Card.from_map(info.body), query: query}}
-              end
+            {:error, embed, options} ->
+              debug("looking at an error here:")
+              debug(inspect(embed))
+              debug(inspect(options))
 
-            :fuzzy ->
-              with {:ok, info} <- fuzzy(query, options, message) do
-                {:card, {Card.from_map(info.body), query: query}}
-              end
-
-            :exact ->
-              with {:ok, info} <- exact(query, options, message) do
-                {:card, {Card.from_map(info.body), query: query}}
-              end
-
-              # :edhrec ->
-              #   with {:ok, info} <- edhrec(query, options, message) do
-              #     {:list, Card.from_map(info.body)}
-              #   end
-
-              # :search ->
-              #   with {:ok, info} <- search(query, options, message) do
-              #     {:list, Card.from_map(info.body)}
-              #   end
-          end
-          |> case do
-            {:error, _embed, options} ->
-              case options do
-                "ambiguous" ->
+              case {options, embed} do
+                {"ambiguous", _} ->
                   {:ok, resp} = Scryfall.Api.autocomplete(query)
                   {:ambiguous, {resp, query: query}}
 
+                {_, %Embed{}} ->
+                  {:error, embed}
+
                 _ ->
-                  send(Scrybot.Discord.FailureDispatcher, {:error, query, message})
-                  # {:error, embed}
+                  send(
+                    Scrybot.Discord.FailureDispatcher,
+                    {:error, "The query #{inspect(query)} produced an error!", message}
+                  )
               end
+
+            {:error, {_kind, _info} = t} ->
+              send(
+                Scrybot.Discord.FailureDispatcher,
+                {:error, "The query #{inspect(query)} produced an error!\n`#{inspect(t)}`",
+                 message}
+              )
 
             card ->
               card
@@ -91,7 +87,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
     end
   end
 
-  defp fuzzy(card_name, options, ctx) do
+  @spec fuzzy(binary, any, any) ::
+          {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
+  def fuzzy(card_name, options, ctx) do
     debug("fuzzy")
     debug(inspect(card_name))
     debug(inspect(options))
@@ -123,7 +121,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
     t
   end
 
-  defp exact(card_name, options, ctx) do
+  @spec exact(binary, any, any) ::
+          {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
+  def exact(card_name, options, ctx) do
     debug("exact")
 
     opts =
@@ -147,7 +147,8 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Scryfall.Api.cards_named(true, opts)
   end
 
-  defp art(card_name, options, ctx) do
+  @spec art(binary, any, any) :: {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
+  def art(card_name, options, ctx) do
     debug("art")
 
     opts =
@@ -332,18 +333,25 @@ defmodule Scrybot.Discord.Command.CardInfo do
   #   Api.create_message(ctx.channel_id, embed: embed)
   # end
 
-  defp return([], ctx) do
-    debug("return")
+  defp mode_map(mode) do
+    case mode do
+      :fuzzy -> :card
+      :exact -> :card
+      :edhrec -> :search
+      _ -> mode
+    end
+  end
 
+  defp return([], ctx) do
     send(
       Scrybot.Discord.FailureDispatcher,
-      {:error, "The query resulted in no valid results. This is a bug.", ctx}
+      {:error,
+       "The query resulted in no valid results.\nThis is because of:\n- the errors above (if any)\n- a bug",
+       ctx}
     )
   end
 
   defp return(embeds, ctx) when is_list(embeds) do
-    debug("return 2")
-
     for embed <- embeds do
       Api.create_message(ctx.channel_id, embed: embed)
     end
