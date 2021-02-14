@@ -309,23 +309,27 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           value in ["1993", "1997", "2003", "2015", "future"]
 
         :frame_effects ->
-          value in [
-            "legendary",
-            "miracle",
-            "nyxtouched",
-            "draft",
-            "devoid",
-            "tombstone",
-            "colorshifted",
-            "sunmoondfc",
-            "compasslanddfc",
-            "originpwdfc",
-            "mooneldrazidfc",
-            "moonreversemoondfc",
-            "showcase",
-            "extendedart",
-            nil
-          ]
+          fn x ->
+            x in [
+              "legendary",
+              "miracle",
+              "nyxtouched",
+              "draft",
+              "devoid",
+              "tombstone",
+              "colorshifted",
+              "sunmoondfc",
+              "compasslanddfc",
+              "originpwdfc",
+              "mooneldrazidfc",
+              "moonreversemoondfc",
+              "showcase",
+              "extendedart",
+              nil
+            ]
+          end
+          |> list_of()
+          |> validate(value)
 
         :full_art ->
           is_boolean(value)
