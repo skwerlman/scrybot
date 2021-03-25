@@ -49,7 +49,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card.Related do
   end
 
   defp valid?(key, value) do
-    debug("checking key #{inspect(key)}")
+    debug("checking related key #{inspect(key)}")
 
     case key do
       :id -> uuid().(value)

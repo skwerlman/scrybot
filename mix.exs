@@ -5,7 +5,7 @@ defmodule Scrybot.MixProject do
   def project do
     [
       app: :scrybot,
-      version: "0.13.2",
+      version: "0.13.3",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -31,14 +31,15 @@ defmodule Scrybot.MixProject do
       {:jason, "~> 1.2"},
       {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
+      {:floki, "~> 0.30"},
       {:tesla, "~> 1.3"},
       {:toml, "~> 0.6"},
       {:httpoison, "~> 1.7", override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:distillery, "~> 2.1", runtime: false},
-      {:dialyxir, "~> 1.0", runtime: false, only: [:dev, :test]},
-      {:credo, "~> 1.4", runtime: false, only: [:dev, :test]}
+      {:dialyxir, "~> 1.1", runtime: false, only: [:dev, :test]},
+      {:credo, "~> 1.5", runtime: false, only: [:dev, :test]}
     ]
   end
 

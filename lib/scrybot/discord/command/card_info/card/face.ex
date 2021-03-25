@@ -71,7 +71,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card.Face do
   # see comment for Card.valid?
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp valid?(key, value) do
-    debug("checking key #{inspect(key)}")
+    debug("checking face key #{inspect(key)}")
 
     case key do
       :artist ->

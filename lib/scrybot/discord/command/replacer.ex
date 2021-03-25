@@ -2,7 +2,7 @@ defmodule Scrybot.Discord.Command.Replacer do
   @moduledoc false
   use Scrybot.LogMacros
   alias Nostrum.Api
-  alias Nostrum.Struct.{Embed, Message, User}
+  alias Nostrum.Struct.{Embed, User}
   alias Scrybot.Discord.{Colors, Emoji}
 
   @behaviour Scrybot.Discord.Behaviour.Handler

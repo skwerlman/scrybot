@@ -2,6 +2,7 @@ defmodule Scrybot.Discord.Command do
   @moduledoc false
   use Scrybot.LogMacros
 
+  @spec handlers :: [module()]
   def handlers do
     Application.get_env(
       :scrybot,
@@ -17,6 +18,7 @@ defmodule Scrybot.Discord.Command do
     )
   end
 
+  @spec react_handlers :: [module()]
   def react_handlers do
     Application.get_env(
       :scrybot,
@@ -86,6 +88,7 @@ defmodule Scrybot.Discord.Command do
     :ok
   end
 
+  @spec init :: :ok
   def init do
     [handlers(), react_handlers()]
     |> Stream.concat()
@@ -117,22 +120,24 @@ defmodule Scrybot.Discord.Command do
 
     debug(inspect(res))
 
-    case res do
-      {:error, _reason} ->
-        Nostrum.Api.create_message(message.channel_id, """
-        :bomb: Sorry, an internal error occurred.
+    _ =
+      case res do
+        {:error, _reason} ->
+          Nostrum.Api.create_message(message.channel_id, """
+          :bomb: Sorry, an internal error occurred.
 
-        `#{inspect(err)}`
+          `#{inspect(err)}`
 
-        Details could not be uploaded due to size. Please check the log.
+          Details could not be uploaded due to size. Please check the log.
 
-        msgref `#{inspect(message.id)}`
-        """)
+          msgref `#{inspect(message.id)}`
+          """)
 
-      _ ->
-        :ok
-    end
+        _ ->
+          :ok
+      end
 
+    error("msgref #{inspect(message.id)}")
     error(errmsg)
     error(trace)
   end

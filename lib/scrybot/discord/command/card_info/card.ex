@@ -214,7 +214,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
   @spec valid?(__MODULE__.t()) :: boolean
   def valid?(card) do
-    debug("validating #{inspect(card.name)}")
+    debug("validating card #{inspect(card.name)}")
 
     {_, valid} =
       card
@@ -233,6 +233,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   # "defp valid?(:some_atom, value) do" 400 fucking times
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp valid?(key, value) do
+    debug("checking card key #{inspect(key)}")
+
     valid =
       case key do
         :all_parts ->
@@ -690,9 +692,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "duel" => :duel,
     "edhrec" => :edhrec,
     "eur" => :eur,
+    "eur_foil" => :eur_foil,
     "flavor_text" => :flavor_text,
     "future" => :future,
     "gatherer" => :gatherer,
+    "gladiator" => :gladiator,
     "historic" => :historic,
     "id" => :id,
     "illustration_id" => :illustration_id,
@@ -713,6 +717,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "pioneer" => :pioneer,
     "png" => :png,
     "power" => :power,
+    "premodern" => :premodern,
     "previewed_at" => :previewed_at,
     "printed_name" => :printed_name,
     "printed_type_line" => :printed_type_line,
@@ -721,6 +726,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "source" => :source,
     "standard" => :standard,
     "tcgplayer_decks" => :tcgplayer_decks,
+    "tcgplayer_infinite_articles" => :tcgplayer_infinite_articles,
+    "tcgplayer_infinite_decks" => :tcgplayer_infinite_decks,
     "tcgplayer" => :tcgplayer,
     "tix" => :tix,
     "toughness" => :toughness,
