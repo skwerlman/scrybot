@@ -331,6 +331,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
             ]
           end
           |> list_of()
+          |> nilable()
           |> validate(value)
 
         :full_art ->
@@ -386,6 +387,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
             "host",
             "art_series",
             "double_sided",
+            "modal_dfc",
             # this one is used internally by the formatter
             "REPLACED_DFT"
           ]
@@ -461,7 +463,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
         :prices ->
           map_of(
-            fn k -> k in [:usd, :usd_foil, :eur, :tix] end,
+            fn k -> k in [:usd, :usd_foil, :eur, :eur_foil, :tix] end,
             printable() |> nilable()
           )
           |> validate(value)
@@ -506,7 +508,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
         :related_uris ->
           map_of(
-            fn k -> k in [:edhrec, :gatherer, :mtgtop8, :tcgplayer_decks] end,
+            fn k -> k in [:edhrec, :gatherer, :mtgtop8, :tcgplayer_decks, :tcgplayer_infinite_decks, :tcgplayer_infinite_articles] end,
             uri()
           )
           |> validate(value)
