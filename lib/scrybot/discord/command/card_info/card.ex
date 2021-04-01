@@ -508,7 +508,16 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
         :related_uris ->
           map_of(
-            fn k -> k in [:edhrec, :gatherer, :mtgtop8, :tcgplayer_decks, :tcgplayer_infinite_decks, :tcgplayer_infinite_articles] end,
+            fn k ->
+              k in [
+                :edhrec,
+                :gatherer,
+                :mtgtop8,
+                :tcgplayer_decks,
+                :tcgplayer_infinite_decks,
+                :tcgplayer_infinite_articles
+              ]
+            end,
             uri()
           )
           |> validate(value)
