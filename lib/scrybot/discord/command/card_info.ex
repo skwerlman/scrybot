@@ -1,6 +1,7 @@
 defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
   use Scrybot.LogMacros
+  alias LibJudge.Filter
   alias Nostrum.Api
   alias Nostrum.Struct.{Embed, Message, User}
   alias Scrybot.Discord.Command.CardInfo.{Card, Formatter, Parser}
@@ -49,6 +50,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
                     case mapped_mode do
                       :list ->
                         {mapped_mode, {info.body, query: query}}
+
+                      :rule ->
+                        {mapped_mode, {info, query: query}}
 
                       _ ->
                         {mapped_mode, {Card.from_map(info.body), query: query}}
@@ -182,7 +186,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Scryfall.Api.cards_named(false, opts)
   end
 
-  @spec search(binary, any, any) ::
+  @spec search(binary, keyword({binary, any}), Nostrum.Struct.Message.t()) ::
           {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
   def search(search_term, options, ctx) do
     debug("search")
@@ -238,108 +242,23 @@ defmodule Scrybot.Discord.Command.CardInfo do
     |> Scryfall.Api.cards_search(opts)
   end
 
-  # defp handle_search(search_term, options, ctx, :edhrec) do
-  #   debug("handle_search 2")
+  @spec rule(binary, any, any) :: {:ok, [LibJudge.Tokenizer.rule()]}
+  def rule(query, _options, _ctx) do
+    error("HERE")
+    rules = Application.get_env(:scrybot, :rules, [])
 
-  #   opts =
-  #     for option <- options do
-  #       case option do
-  #         {"unique", unique} when unique in ["cards", "art", "prints"] ->
-  #           {:unique, unique}
+    filter =
+      Filter.either(
+        Filter.rule_is(query),
+        Filter.body_contains(query)
+      )
 
-  #         {"order", order}
-  #         when order in [
-  #                "name",
-  #                "set",
-  #                "released",
-  #                "rarity",
-  #                "color",
-  #                "usd",
-  #                "tix",
-  #                "eur",
-  #                "cmc",
-  #                "power",
-  #                "toughness",
-  #                "edhrec",
-  #                "artist"
-  #              ] ->
-  #           {:order, order}
+    matches =
+      rules
+      |> Enum.filter(filter)
 
-  #         {"dir", dir} when dir in ["auto", "asc", "desc"] ->
-  #           {:dir, dir}
-
-  #         {"include", "extras"} ->
-  #           {:include_extras, true}
-
-  #         {"include", "multilingual"} ->
-  #           {:include_multilingual, true}
-
-  #         {"include", "variations"} ->
-  #           {:include_variations, true}
-
-  #         {name, val} ->
-  #           send(
-  #             Scrybot.Discord.FailureDispatcher,
-  #             {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
-  #           )
-
-  #           :skip
-  #       end
-  #     end
-  #     |> Enum.reject(fn x -> x == :skip end)
-
-  #   search_term
-  #   |> Scryfall.Api.cards_search(opts)
-  #   |> handle_search_results(ctx, :edhrec)
-  # end
-
-  # defp return_search_results(%{body: results}, ctx, :search) do
-  #   # debug(inspect(results))
-  #   debug("return_search_results")
-
-  #   card_list =
-  #     results["data"]
-  #     |> Enum.to_list()
-  #     |> Enum.map(fn x -> "- #{x["name"]}" end)
-  #     |> Enum.take(50)
-
-  #   msg_body =
-  #     card_list
-  #     |> Enum.join("\n")
-
-  #   embed =
-  #     %Embed{}
-  #     |> Embed.put_color(Colors.info())
-  #     |> Embed.put_title("Search Results (#{length(card_list)} of #{results["total_cards"]})")
-  #     |> Embed.put_description("#{msg_body}")
-
-  #   Api.create_message(ctx.channel_id, embed: embed)
-  # end
-
-  # defp return_search_results(%{body: results}, ctx, :edhrec) do
-  #   # debug(inspect(results))
-  #   debug("return_search_results 2")
-
-  #   card_list =
-  #     results["data"]
-  #     |> Enum.to_list()
-  #     |> Enum.map(fn x -> "- **#{x["name"]}** (##{x["edhrec_rank"]})" end)
-  #     |> Enum.take(50)
-
-  #   msg_body =
-  #     card_list
-  #     |> Enum.join("\n")
-
-  #   embed =
-  #     %Embed{}
-  #     |> Embed.put_color(Colors.info())
-  #     |> Embed.put_title(
-  #       "EDHREC Search Results (#{length(card_list)} of #{results["total_cards"]})"
-  #     )
-  #     |> Embed.put_description("#{msg_body}")
-
-  #   Api.create_message(ctx.channel_id, embed: embed)
-  # end
+    {:ok, matches}
+  end
 
   defp mode_map(mode) do
     case mode do

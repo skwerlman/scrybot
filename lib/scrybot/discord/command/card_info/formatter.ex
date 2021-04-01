@@ -132,6 +132,37 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     """)
   end
 
+  def format(:rule, rules, _meta) do
+    for {:rule, {type, rule, body, examples}} <- rules do
+      type_name =
+        type
+        |> Atom.to_string()
+        |> String.capitalize()
+
+      rule_name =
+        rule
+        |> LibJudge.Rule.to_string!()
+
+      footer_string = "Data from the Magic: The Gathering Comprehensive Rules"
+
+      embed =
+        %Embed{}
+        |> Embed.put_color(Colors.success())
+        |> Embed.put_title("#{type_name} #{rule_name}")
+        |> Embed.put_description(body)
+        |> Embed.put_footer(footer_string)
+
+      case examples do
+        [] ->
+          embed
+
+        _ ->
+          examples
+          |> Enum.reduce(embed, &Embed.put_field(&2, "Example", &1))
+      end
+    end
+  end
+
   def format(:error, card, _meta) do
     card
   end

@@ -85,6 +85,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Parser do
   defp mode("e", _ctx), do: :edhrec
   defp mode("=", _ctx), do: :exact
   defp mode("?", _ctx), do: :search
+  defp mode("j", _ctx), do: :rule
 
   defp mode(mode, _ctx) do
     {:error, {:bad_mode, mode}}
