@@ -621,21 +621,10 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     struct = struct(__MODULE__)
 
     Enum.reduce(Map.to_list(struct), struct, fn {k, _}, acc ->
-      case {Map.fetch(card, Atom.to_string(k)), Map.fetch(card, k)} do
-        {{:ok, v}, _} ->
-          case k do
-            :all_parts ->
-              %{acc | k => for(v2 <- v, do: v2 |> atomify_map() |> Related.from_map())}
+      resp = really_get_from_map(card, k)
 
-            :card_faces ->
-              t = for(v2 <- v, do: v2 |> atomify_map() |> Face.from_map())
-              %{acc | k => t}
-
-            _ ->
-              %{acc | k => atomify_map(v)}
-          end
-
-        {_, {:ok, v}} ->
+      case resp do
+        {:ok, v} ->
           case {k, v} do
             {_, nil} ->
               acc
@@ -651,7 +640,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
               %{acc | k => atomify_map(v)}
           end
 
-        {_, _} ->
+        _ ->
           acc
       end
     end)
@@ -666,6 +655,19 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
         :error -> acc
       end
     end)
+  end
+
+  defp really_get_from_map(map, key) do
+    case {Map.fetch(map, Atom.to_string(key)), Map.fetch(map, key)} do
+      {{:ok, v}, _} ->
+        {:ok, v}
+
+      {_, {:ok, v}} ->
+        {:ok, v}
+
+      {_, _} ->
+        {:error, :notfound}
+    end
   end
 
   defp atomify_map(map) when is_map(map) do
