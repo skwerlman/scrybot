@@ -33,6 +33,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
     case requests do
       [] ->
+        # no requests, so nothing to do
         :ok
 
       _ ->
@@ -281,7 +282,24 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp return(embeds, ctx) when is_list(embeds) do
     for embed <- embeds do
-      Api.create_message(ctx.channel_id, embed: embed)
+      res = Api.create_message(ctx.channel_id, embed: embed)
+
+      case res do
+        {:ok, _} ->
+          :ok
+
+        {:error, %Nostrum.Error.ApiError{response: %{retry_after: wait}, status_code: 429}} ->
+          Process.sleep(wait)
+          return([embed], ctx)
+
+        err ->
+          error(inspect(err))
+
+          send(
+            Scrybot.Discord.FailureDispatcher,
+            {:error, "An embed failed to send. This is a bug.", ctx}
+          )
+      end
     end
   end
 end
