@@ -248,9 +248,25 @@ defmodule Scrybot.Discord.Command.CardInfo do
   end
 
   @spec rule(binary, any, any) :: {:ok, [LibJudge.Tokenizer.rule()]}
-  def rule(query, _options, _ctx) do
-    error("HERE")
+  def rule(query, options, ctx) do
     rules = Application.get_env(:scrybot, :rules, [])
+
+    opts =
+      for option <- options do
+        case option do
+          {"max", max} ->
+            {:max, max}
+
+          {name, val} ->
+            send(
+              Scrybot.Discord.FailureDispatcher,
+              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
+            )
+
+            :skip
+        end
+      end
+      |> Enum.reject(fn x -> x == :skip end)
 
     filter =
       Filter.either(
@@ -258,9 +274,18 @@ defmodule Scrybot.Discord.Command.CardInfo do
         Filter.body_contains(query)
       )
 
-    matches =
+    all_matches =
       rules
       |> Enum.filter(filter)
+
+    matches =
+      all_matches
+      |> Enum.take(Keyword.get(opts, :max, 10))
+
+    send(
+      Scrybot.Discord.FailureDispatcher,
+      {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
+    )
 
     {:ok, matches}
   end
