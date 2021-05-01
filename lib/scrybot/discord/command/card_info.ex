@@ -29,6 +29,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
     debug("do_command")
+
     requests = Parser.tokenize(message.content, message)
 
     case requests do
@@ -37,6 +38,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
         :ok
 
       _ ->
+        # let the user know we're thinking
+        _ = Api.start_typing(message.channel_id)
+
         for request = {mode, query, options} <- requests do
           debug("request: #{inspect(request)}")
 
@@ -289,6 +293,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
           :ok
 
         {:error, %Nostrum.Error.ApiError{response: %{retry_after: wait}, status_code: 429}} ->
+          _ = Api.start_typing(ctx.channel_id)
           Process.sleep(wait)
           return([embed], ctx)
 
