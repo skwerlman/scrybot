@@ -317,7 +317,7 @@ defmodule Scrybot.Discord.Command.CardInfo do
         {:ok, _} ->
           :ok
 
-        {:error, %Nostrum.Error.ApiError{response: %{retry_after: wait}, status_code: 429}} ->
+        {:error, %{response: %{retry_after: wait}, status_code: 429}} ->
           _ = Api.start_typing(ctx.channel_id)
           Process.sleep(wait)
           return([embed], ctx)
