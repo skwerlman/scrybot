@@ -27,6 +27,8 @@ use Mix.Config
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 
+config :phoenix, :json_library, Jason
+
 config :scrybot,
   workers: :auto
 
@@ -49,8 +51,6 @@ config :logger, :default_logger,
   default_level: :info,
   level_config: [
     [application: :scrybot, module: Scrybot, level: :debug],
-    [application: :nostrum, module: Nostrum, level: :warn],
-    [application: :nostrum, module: Nostrum.Api.Ratelimiter, level: :info]
   ],
   format: "$time [$level]$levelpad $message\n"
 
