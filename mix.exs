@@ -24,9 +24,9 @@ defmodule Scrybot.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:lib_judge, git: "https://github.com/skwerlman/lib_judge"},
+      {:lib_judge, github: "skwerlman/lib_judge"},
       # {:nostrum, path: "/mnt/code/nostrum"},
-      {:nostrum, git: "https://github.com/kraigie/nostrum"},
+      {:nostrum, github: "kraigie/nostrum"},
       {:con_cache, "~> 0.14"},
       {:jason, "~> 1.2"},
       {:ex_rated, "~> 1.3"},
