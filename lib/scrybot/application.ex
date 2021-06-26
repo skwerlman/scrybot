@@ -8,7 +8,7 @@ defmodule Scrybot.Application do
   def start(_type, _args) do
     # Load MTG rules into memory before starting
     rules =
-      "20210224"
+      :current
       |> LibJudge.get!()
       |> LibJudge.tokenize()
 
