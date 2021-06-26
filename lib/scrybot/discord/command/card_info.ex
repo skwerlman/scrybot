@@ -1,10 +1,9 @@
 defmodule Scrybot.Discord.Command.CardInfo do
   @moduledoc false
   use Scrybot.LogMacros
-  alias LibJudge.Filter
   alias Nostrum.Api
   alias Nostrum.Struct.{Embed, Message, User}
-  alias Scrybot.Discord.Command.CardInfo.{Card, Formatter, Parser}
+  alias Scrybot.Discord.Command.CardInfo.{Card, Formatter, Mode, Parser}
   alias Scrybot.Scryfall
 
   @behaviour Scrybot.Discord.Behaviour.Handler
@@ -45,25 +44,25 @@ defmodule Scrybot.Discord.Command.CardInfo do
           debug("request: #{inspect(request)}")
 
           mode
-          |> (fn
-                {:error, _} ->
-                  mode
+          |> case do
+            {:error, _} ->
+              mode
 
-                mode ->
-                  with {:ok, info} <- apply(__MODULE__, mode, [query, options, message]),
-                       mapped_mode <- mode_map(mode) do
-                    case mapped_mode do
-                      :list ->
-                        {mapped_mode, {info.body, query: query}}
+            mode ->
+              with {:ok, info} <- apply(Mode, mode, [query, options, message]),
+                   mapped_mode <- mode_map(mode) do
+                case mapped_mode do
+                  :list ->
+                    {mapped_mode, {info.body, query: query}}
 
-                      :rule ->
-                        {mapped_mode, {info, query: query}}
+                  :rule ->
+                    {mapped_mode, {info, query: query}}
 
-                      _ ->
-                        {mapped_mode, {Card.from_map(info.body), query: query}}
-                    end
-                  end
-              end).()
+                  _ ->
+                    {mapped_mode, {Card.from_map(info.body), query: query}}
+                end
+              end
+          end
           |> case do
             {:error, embed, options} ->
               debug("looking at an error here:")
@@ -101,193 +100,6 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
         :ok
     end
-  end
-
-  @spec fuzzy(binary, any, any) ::
-          {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
-  def fuzzy(card_name, options, ctx) do
-    debug("fuzzy")
-    debug(inspect(card_name))
-    debug(inspect(options))
-    debug(inspect(ctx))
-
-    opts =
-      for option <- options do
-        case option do
-          {"set", set} ->
-            {:set, set}
-
-          {name, _val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name '#{name}'", ctx}
-            )
-
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
-
-    t =
-      card_name
-      |> Scryfall.Api.cards_named(false, opts)
-
-    debug("T " <> inspect(t))
-
-    t
-  end
-
-  @spec exact(binary, any, any) ::
-          {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
-  def exact(card_name, options, ctx) do
-    debug("exact")
-
-    opts =
-      for option <- options do
-        case option do
-          {"set", set} ->
-            {:set, set}
-
-          {name, _val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name '#{name}'", ctx}
-            )
-
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
-
-    card_name
-    |> Scryfall.Api.cards_named(true, opts)
-  end
-
-  @spec art(binary, any, any) :: {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
-  def art(card_name, options, ctx) do
-    debug("art")
-
-    opts =
-      for option <- options do
-        case option do
-          {"set", set} ->
-            {:set, set}
-
-          {"face", face} ->
-            {:face, face}
-
-          {name, _val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name '#{name}'", ctx}
-            )
-
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
-
-    card_name
-    |> Scryfall.Api.cards_named(false, opts)
-  end
-
-  @spec search(binary, keyword({binary, any}), Nostrum.Struct.Message.t()) ::
-          {:ok, Tesla.Env.t()} | {:error, Nostrum.Struct.Embed.t(), binary}
-  def search(search_term, options, ctx) do
-    debug("search")
-
-    opts =
-      for option <- options do
-        case option do
-          {"unique", unique} when unique in ["cards", "art", "prints"] ->
-            {:unique, unique}
-
-          {"order", order}
-          when order in [
-                 "name",
-                 "set",
-                 "released",
-                 "rarity",
-                 "color",
-                 "usd",
-                 "tix",
-                 "eur",
-                 "cmc",
-                 "power",
-                 "toughness",
-                 "edhrec",
-                 "artist"
-               ] ->
-            {:order, order}
-
-          {"dir", dir} when dir in ["auto", "asc", "desc"] ->
-            {:dir, dir}
-
-          {"include", "extras"} ->
-            {:include_extras, true}
-
-          {"include", "multilingual"} ->
-            {:include_multilingual, true}
-
-          {"include", "variations"} ->
-            {:include_variations, true}
-
-          {name, val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
-            )
-
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
-
-    search_term
-    |> Scryfall.Api.cards_search(opts)
-  end
-
-  @spec rule(binary, any, any) :: {:ok, [LibJudge.Tokenizer.rule()]}
-  def rule(query, options, ctx) do
-    rules = Application.get_env(:scrybot, :rules, [])
-
-    opts =
-      for option <- options do
-        case option do
-          {"max", max} ->
-            {:max, max}
-
-          {name, val} ->
-            send(
-              Scrybot.Discord.FailureDispatcher,
-              {:warning, "Unknown option name/value '#{name}=#{val}'", ctx}
-            )
-
-            :skip
-        end
-      end
-      |> Enum.reject(fn x -> x == :skip end)
-
-    filter =
-      Filter.either(
-        Filter.rule_is(query),
-        Filter.body_contains(query)
-      )
-
-    all_matches =
-      rules
-      |> Enum.filter(filter)
-
-    matches =
-      all_matches
-      |> Enum.take(Keyword.get(opts, :max, 10))
-
-    send(
-      Scrybot.Discord.FailureDispatcher,
-      {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
-    )
-
-    {:ok, matches}
   end
 
   defp mode_map(mode) do
