@@ -4,6 +4,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   import Scrybot.Discord.Command.CardInfo.Validator
   alias Scrybot.Discord.Command.CardInfo.Card.{Face, Related}
 
+
+
   @type preview :: %{
           previewed_at: String.t(),
           source_uri: String.t(),
@@ -212,6 +214,134 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     :watermark
   ]
 
+
+
+  @known_atom_mapping %{
+    "art_crop" => :art_crop,
+    "artist" => :artist,
+    "artist_id" => :artist,
+    "border_crop" => :border_crop,
+    "brawl" => :brawl,
+    "cardhoarder" => :cardhoarder,
+    "cardmarket" => :cardmarket,
+    "color_indicator" => :color_indicator,
+    "colors" => :colors,
+    "commander" => :commander,
+    "component" => :component,
+    "duel" => :duel,
+    "edhrec" => :edhrec,
+    "eur" => :eur,
+    "eur_foil" => :eur_foil,
+    "flavor_text" => :flavor_text,
+    "future" => :future,
+    "gatherer" => :gatherer,
+    "gladiator" => :gladiator,
+    "historic" => :historic,
+    "id" => :id,
+    "illustration_id" => :illustration_id,
+    "image_uris" => :image_uris,
+    "large" => :large,
+    "legacy" => :legacy,
+    "loyalty" => :loyalty,
+    "mana_cost" => :mana_cost,
+    "modern" => :modern,
+    "mtgtop8" => :mtgtop8,
+    "name" => :name,
+    "normal" => :normal,
+    "object" => :object,
+    "oldschool" => :oldschool,
+    "oracle_text" => :oracle_text,
+    "pauper" => :pauper,
+    "penny" => :penny,
+    "pioneer" => :pioneer,
+    "png" => :png,
+    "power" => :power,
+    "premodern" => :premodern,
+    "previewed_at" => :previewed_at,
+    "printed_name" => :printed_name,
+    "printed_type_line" => :printed_type_line,
+    "small" => :small,
+    "source_uri" => :source_uri,
+    "source" => :source,
+    "standard" => :standard,
+    "tcgplayer_decks" => :tcgplayer_decks,
+    "tcgplayer_infinite_articles" => :tcgplayer_infinite_articles,
+    "tcgplayer_infinite_decks" => :tcgplayer_infinite_decks,
+    "tcgplayer" => :tcgplayer,
+    "tix" => :tix,
+    "toughness" => :toughness,
+    "type_line" => :type_line,
+    "uri" => :uri,
+    "usd_foil" => :usd_foil,
+    "usd" => :usd,
+    "vintage" => :vintage,
+    "watermark" => :watermark
+  }
+
+  @frame_effects MapSet.new([
+    "legendary",
+    "miracle",
+    "nyxtouched",
+    "draft",
+    "devoid",
+    "tombstone",
+    "colorshifted",
+    "sunmoondfc",
+    "compasslanddfc",
+    "originpwdfc",
+    "mooneldrazidfc",
+    "moonreversemoondfc",
+    "showcase",
+    "extendedart"
+  ])
+
+  @layouts MapSet.new([
+    "normal",
+    "split",
+    "flip",
+    "transform",
+    "meld",
+    "leveler",
+    "saga",
+    "adventure",
+    "planar",
+    "scheme",
+    "vanguard",
+    "token",
+    "double_faced_token",
+    "emblem",
+    "augment",
+    "host",
+    "art_series",
+    "double_sided",
+    "modal_dfc",
+    # this one is used internally by the formatter
+    "REPLACED_DFT"
+  ])
+
+  @set_types MapSet.new([
+    "core",
+    "expansion",
+    "masters",
+    "masterpiece",
+    "from_the_vault",
+    "spellbook",
+    "premium_deck",
+    "duel_deck",
+    "draft_innovation",
+    "treasure_chest",
+    "commander",
+    "planechase",
+    "archenemy",
+    "vanguard",
+    "funny",
+    "starter",
+    "box",
+    "promo",
+    "token",
+    "memorabilia"
+  ])
+
   @spec valid?(__MODULE__.t()) :: boolean
   def valid?(card) do
     debug("validating card #{inspect(card.name)}")
@@ -312,23 +442,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
         :frame_effects ->
           fn x ->
-            x in [
-              "legendary",
-              "miracle",
-              "nyxtouched",
-              "draft",
-              "devoid",
-              "tombstone",
-              "colorshifted",
-              "sunmoondfc",
-              "compasslanddfc",
-              "originpwdfc",
-              "mooneldrazidfc",
-              "moonreversemoondfc",
-              "showcase",
-              "extendedart",
-              nil
-            ]
+            x in @frame_effects
           end
           |> list_of()
           |> nilable()
@@ -368,29 +482,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           printable().(value)
 
         :layout ->
-          value in [
-            "normal",
-            "split",
-            "flip",
-            "transform",
-            "meld",
-            "leveler",
-            "saga",
-            "adventure",
-            "planar",
-            "scheme",
-            "vanguard",
-            "token",
-            "double_faced_token",
-            "emblem",
-            "augment",
-            "host",
-            "art_series",
-            "double_sided",
-            "modal_dfc",
-            # this one is used internally by the formatter
-            "REPLACED_DFT"
-          ]
+          value in @layouts
 
         :legalities ->
           (&is_atom/1)
@@ -550,28 +642,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           uri().(value)
 
         :set_type ->
-          value in [
-            "core",
-            "expansion",
-            "masters",
-            "masterpiece",
-            "from_the_vault",
-            "spellbook",
-            "premium_deck",
-            "duel_deck",
-            "draft_innovation",
-            "treasure_chest",
-            "commander",
-            "planechase",
-            "archenemy",
-            "vanguard",
-            "funny",
-            "starter",
-            "box",
-            "promo",
-            "token",
-            "memorabilia"
-          ]
+          value in @set_types
 
         :set_uri ->
           uri().(value)
@@ -689,68 +760,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   end
 
   defp atomify_map(term), do: term
-
-  @known_atom_mapping %{
-    "art_crop" => :art_crop,
-    "artist" => :artist,
-    "artist_id" => :artist,
-    "border_crop" => :border_crop,
-    "brawl" => :brawl,
-    "cardhoarder" => :cardhoarder,
-    "cardmarket" => :cardmarket,
-    "color_indicator" => :color_indicator,
-    "colors" => :colors,
-    "commander" => :commander,
-    "component" => :component,
-    "duel" => :duel,
-    "edhrec" => :edhrec,
-    "eur" => :eur,
-    "eur_foil" => :eur_foil,
-    "flavor_text" => :flavor_text,
-    "future" => :future,
-    "gatherer" => :gatherer,
-    "gladiator" => :gladiator,
-    "historic" => :historic,
-    "id" => :id,
-    "illustration_id" => :illustration_id,
-    "image_uris" => :image_uris,
-    "large" => :large,
-    "legacy" => :legacy,
-    "loyalty" => :loyalty,
-    "mana_cost" => :mana_cost,
-    "modern" => :modern,
-    "mtgtop8" => :mtgtop8,
-    "name" => :name,
-    "normal" => :normal,
-    "object" => :object,
-    "oldschool" => :oldschool,
-    "oracle_text" => :oracle_text,
-    "pauper" => :pauper,
-    "penny" => :penny,
-    "pioneer" => :pioneer,
-    "png" => :png,
-    "power" => :power,
-    "premodern" => :premodern,
-    "previewed_at" => :previewed_at,
-    "printed_name" => :printed_name,
-    "printed_type_line" => :printed_type_line,
-    "small" => :small,
-    "source_uri" => :source_uri,
-    "source" => :source,
-    "standard" => :standard,
-    "tcgplayer_decks" => :tcgplayer_decks,
-    "tcgplayer_infinite_articles" => :tcgplayer_infinite_articles,
-    "tcgplayer_infinite_decks" => :tcgplayer_infinite_decks,
-    "tcgplayer" => :tcgplayer,
-    "tix" => :tix,
-    "toughness" => :toughness,
-    "type_line" => :type_line,
-    "uri" => :uri,
-    "usd_foil" => :usd_foil,
-    "usd" => :usd,
-    "vintage" => :vintage,
-    "watermark" => :watermark
-  }
 
   defp to_known_atom(atom) when is_atom(atom) do
     {:ok, atom}
