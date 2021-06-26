@@ -32,12 +32,12 @@ defmodule Scrybot.MixProject do
       {:ex_rated, "~> 1.3"},
       {:elixir_uuid, "~> 1.2"},
       {:floki, "~> 0.30"},
-      {:tesla, "~> 1.3"},
+      {:tesla, "~> 1.4"},
       {:toml, "~> 0.6"},
       {:httpoison, "~> 1.7", override: true},
+      {:gun, ">= 2.0.0-rc.2", override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
-      {:distillery, "~> 2.1", runtime: false},
       {:dialyxir, "~> 1.1", runtime: false, only: [:dev, :test]},
       {:credo, "~> 1.5", runtime: false, only: [:dev, :test]}
     ]
