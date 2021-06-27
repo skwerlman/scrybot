@@ -40,10 +40,12 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
       all_matches
       |> Enum.take(Keyword.get(opts, :max, 10))
 
-    send(
-      Scrybot.Discord.FailureDispatcher,
-      {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
-    )
+    if matches != all_matches do
+      send(
+        Scrybot.Discord.FailureDispatcher,
+        {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
+      )
+    end
 
     {:ok, matches}
   end
