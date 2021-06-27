@@ -4,8 +4,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   import Scrybot.Discord.Command.CardInfo.Validator
   alias Scrybot.Discord.Command.CardInfo.Card.{Face, Related}
 
-
-
   @type preview :: %{
           previewed_at: String.t(),
           source_uri: String.t(),
@@ -214,8 +212,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     :watermark
   ]
 
-
-
   @known_atom_mapping %{
     "art_crop" => :art_crop,
     "artist" => :artist,
@@ -279,68 +275,68 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   }
 
   @frame_effects MapSet.new([
-    "legendary",
-    "miracle",
-    "nyxtouched",
-    "draft",
-    "devoid",
-    "tombstone",
-    "colorshifted",
-    "sunmoondfc",
-    "compasslanddfc",
-    "originpwdfc",
-    "mooneldrazidfc",
-    "moonreversemoondfc",
-    "showcase",
-    "extendedart"
-  ])
+                   "legendary",
+                   "miracle",
+                   "nyxtouched",
+                   "draft",
+                   "devoid",
+                   "tombstone",
+                   "colorshifted",
+                   "sunmoondfc",
+                   "compasslanddfc",
+                   "originpwdfc",
+                   "mooneldrazidfc",
+                   "moonreversemoondfc",
+                   "showcase",
+                   "extendedart"
+                 ])
 
   @layouts MapSet.new([
-    "normal",
-    "split",
-    "flip",
-    "transform",
-    "meld",
-    "leveler",
-    "saga",
-    "adventure",
-    "planar",
-    "scheme",
-    "vanguard",
-    "token",
-    "double_faced_token",
-    "emblem",
-    "augment",
-    "host",
-    "art_series",
-    "double_sided",
-    "modal_dfc",
-    # this one is used internally by the formatter
-    "REPLACED_DFT"
-  ])
+             "normal",
+             "split",
+             "flip",
+             "transform",
+             "meld",
+             "leveler",
+             "saga",
+             "adventure",
+             "planar",
+             "scheme",
+             "vanguard",
+             "token",
+             "double_faced_token",
+             "emblem",
+             "augment",
+             "host",
+             "art_series",
+             "double_sided",
+             "modal_dfc",
+             # this one is used internally by the formatter
+             "REPLACED_DFT"
+           ])
 
   @set_types MapSet.new([
-    "core",
-    "expansion",
-    "masters",
-    "masterpiece",
-    "from_the_vault",
-    "spellbook",
-    "premium_deck",
-    "duel_deck",
-    "draft_innovation",
-    "treasure_chest",
-    "commander",
-    "planechase",
-    "archenemy",
-    "vanguard",
-    "funny",
-    "starter",
-    "box",
-    "promo",
-    "token",
-    "memorabilia"
-  ])
+               "core",
+               "expansion",
+               "masters",
+               "masterpiece",
+               "from_the_vault",
+               "spellbook",
+               "premium_deck",
+               "duel_deck",
+               "draft_innovation",
+               "treasure_chest",
+               "commander",
+               "planechase",
+               "archenemy",
+               "vanguard",
+               "funny",
+               "starter",
+               "box",
+               "promo",
+               "token",
+               "memorabilia"
+             ])
 
   @spec valid?(__MODULE__.t()) :: boolean
   def valid?(card) do

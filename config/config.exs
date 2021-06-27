@@ -50,7 +50,7 @@ config :logger, :default_logger,
   logger: :console,
   default_level: :info,
   level_config: [
-    [application: :scrybot, module: Scrybot, level: :debug],
+    [application: :scrybot, module: Scrybot, level: :debug]
   ],
   format: "$time [$level]$levelpad $message\n"
 
