@@ -60,6 +60,9 @@ defmodule Scrybot.Discord.Command do
         catch
           kind, e ->
             bomb(e, Exception.format(kind, e, __STACKTRACE__), message)
+        rescue
+          e ->
+            bomb(e, Exception.format(:error, e, __STACKTRACE__), message)
         end
       end)
 
