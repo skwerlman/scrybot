@@ -9,16 +9,18 @@ defmodule Scrybot.Discord.Command.Replacer do
   @behaviour Scrybot.Discord.Behaviour.CommandHandler
 
   @impl Scrybot.Discord.Behaviour.Handler
+  @spec allow_bots? :: false
   def allow_bots?, do: false
 
   @impl Scrybot.Discord.Behaviour.Handler
+  @spec init :: :ok
   def init do
     info("Replacer loaded")
     :ok
   end
 
   @impl Scrybot.Discord.Behaviour.CommandHandler
-  # @spec do_command(Nostrum.Struct.Message.t()) :: :ok
+  @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(message) when is_struct(message) do
     msg =
       message.content
@@ -27,6 +29,9 @@ defmodule Scrybot.Discord.Command.Replacer do
 
     _ =
       if message.content != msg do
+        # bang! method used here so we don't
+        # try to delete the original until
+        # our replacement version is posted
         _ = Api.create_message!(message.channel_id, embed: embed(msg, message))
         Api.delete_message!(message)
       end
