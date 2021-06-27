@@ -27,8 +27,6 @@ defmodule Scrybot.Discord.Command.CardInfo do
   @impl Scrybot.Discord.Behaviour.CommandHandler
   @spec do_command(Nostrum.Struct.Message.t()) :: :ok
   def do_command(%Message{author: %User{bot: bot}} = message) when bot in [false, nil] do
-    debug("do_command")
-
     requests = Parser.tokenize(message.content, message)
 
     case requests do
