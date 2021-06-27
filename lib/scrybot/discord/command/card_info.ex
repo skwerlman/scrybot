@@ -121,14 +121,26 @@ defmodule Scrybot.Discord.Command.CardInfo do
 
   defp return(embeds, ctx) when is_list(embeds) do
     for embed <- embeds do
+      # create a task to start typing if we get rate limited
+      # we use a task with a delay instead of always sending
+      # so that the indicator doesnt flicker
+      {:ok, timer_proc} = Task.start(type_after(300, ctx))
+      # try to send the message
       res = Api.create_message(ctx.channel_id, embed: embed)
 
       case res do
         {:ok, _} ->
+          # message is sent, so we cancel the pending typing indicator
+          _ = Process.send(timer_proc, :cancel, [])
           :ok
 
         {:error, %{response: %{retry_after: wait}, status_code: 429}} ->
-          _ = Api.start_typing(ctx.channel_id)
+          # if the discord ratelimiter breaks (again), do it ourselves
+          # we already have a pending typing timer, no need to start here
+
+          # sleep for however long discord wants us to
+          # this isnt bulletproof; simultaneous requests break this
+          # but we're only ever here if ratelimiting is already broken
           Process.sleep(wait)
           return([embed], ctx)
 
@@ -139,6 +151,21 @@ defmodule Scrybot.Discord.Command.CardInfo do
             Scrybot.Discord.FailureDispatcher,
             {:error, "An embed failed to send. This is a bug.", ctx}
           )
+      end
+    end
+  end
+
+  defp type_after(delay, ctx) do
+    # return a function for Task.start that is cancellable
+    # if the recieve times out, we start typing. otherwise, nothing
+    # We dont care if this gets killed brutally during shutdown, so
+    # no need for a Task.Supervisor above this
+    fn ->
+      receive do
+        :cancel ->
+          :ok
+      after delay ->
+        _ = Api.start_typing(ctx.channel_id)
       end
     end
   end
