@@ -26,10 +26,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
       |> Enum.reject(fn x -> x == :skip end)
 
     filter =
-      Filter.either(
+      Filter.any([
         Filter.rule_is(query),
+        Filter.rule_starts_with(query),
         Filter.body_contains(query)
-      )
+      ])
 
     all_matches =
       rules
