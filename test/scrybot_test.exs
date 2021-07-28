@@ -16,7 +16,8 @@ defmodule ScrybotTest do
        [
          {"someopt", "3"}
        ]},
-      {{:error, :bad_mode}, "foobar", []},
+      {{:error, {:bad_mode, "7"}}, "foobar", []},
+      {{:error, {:bad_mode, "À"}}, "multibyte grapheme", []},
       {:edhrec, "invalid opts", [{"test", "ok"}]},
       {:fuzzy, "a[test card", []}
     ]
