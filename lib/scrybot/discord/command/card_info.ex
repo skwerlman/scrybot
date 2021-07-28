@@ -164,8 +164,9 @@ defmodule Scrybot.Discord.Command.CardInfo do
       receive do
         :cancel ->
           :ok
-      after delay ->
-        _ = Api.start_typing(ctx.channel_id)
+      after
+        delay ->
+          _ = Api.start_typing(ctx.channel_id)
       end
     end
   end
