@@ -316,8 +316,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
           |> Emoji.emojify()
       end
 
-    power = card.power
-    toughness = card.toughness
+    power = md_escape(card.power)
+    toughness = md_escape(card.toughness)
 
     pt =
       if power && toughness do
