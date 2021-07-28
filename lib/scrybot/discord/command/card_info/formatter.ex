@@ -177,7 +177,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
            face.name,
            query,
            Integer.floor_div(String.length(query), 4)
-         ) do
+         ) or String.contains?(query, "/") do
         debug("MATCH")
         Map.merge(card, face)
       end
