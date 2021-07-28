@@ -36,7 +36,13 @@ defmodule Scrybot.Discord.FailureDispatcher do
       |> Embed.put_color(Colors.from_atom(level))
       |> Embed.put_description(message)
 
-    _ = Api.create_message(ctx.channel_id, embed: embed)
+    case ctx do
+      :NONE ->
+        :ok
+
+      _ ->
+        _ = Api.create_message(ctx.channel_id, embed: embed)
+    end
 
     {:noreply, :state}
   end
@@ -47,7 +53,13 @@ defmodule Scrybot.Discord.FailureDispatcher do
       |> Embed.put_color(Colors.from_atom(level))
       |> Embed.put_description(inspect(message))
 
-    _ = Api.create_message(ctx.channel_id, embed: embed)
+    case ctx do
+      :NONE ->
+        :ok
+
+      _ ->
+        _ = Api.create_message(ctx.channel_id, embed: embed)
+    end
 
     {:noreply, :state}
   end
