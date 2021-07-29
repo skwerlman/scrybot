@@ -279,7 +279,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   end
 
   @spec md_escape(String.t()) :: String.t()
-  def md_escape(text) do
+  def md_escape(text) when is_binary(text) do
     text
     |> String.replace("_", "\\_")
     |> String.replace("~", "\\~")
@@ -287,6 +287,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     |> String.replace("`", "\\`")
     |> String.replace(">", "\\>")
   end
+
+  def md_escape(x), do: x
 
   @spec fits_limits?(Card.t(), [String.t()]) :: boolean
   def fits_limits?(_info, rulings) do
