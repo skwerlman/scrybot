@@ -24,7 +24,7 @@ defmodule Scrybot.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:lib_judge, github: "skwerlman/lib_judge"},
+      {:lib_judge, "~> 0.4"},
       # {:nostrum, path: "/mnt/code/nostrum"},
       {:nostrum, github: "kraigie/nostrum"},
       {:con_cache, "~> 1.0"},
@@ -34,10 +34,14 @@ defmodule Scrybot.MixProject do
       {:floki, "~> 0.30"},
       {:tesla, "~> 1.4"},
       {:toml, "~> 0.6"},
+      {:telemetry, "~> 1.0", override: true},
+      {:certifi, "~> 2.7", override: true},
       {:httpoison, "~> 1.7", override: true},
+      {:poison, "~> 5.0", override: true},
       {:gun, ">= 2.0.0-rc.2", override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
+      {:ex_doc, ">= 0.0.0"},
       {:dialyxir, "~> 1.1", runtime: false, only: [:dev, :test]},
       {:credo, "~> 1.5", runtime: false, only: [:dev, :test]}
     ]
