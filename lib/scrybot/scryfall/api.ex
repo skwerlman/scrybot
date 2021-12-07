@@ -8,6 +8,7 @@ defmodule Scrybot.Scryfall.Api do
 
   @type error :: {:error, Embed.t(), String.t()}
 
+  plug(Tesla.Middleware.Telemetry)
   plug(Scrybot.Scryfall.Ratelimiter.Middleware, {:scryfall_bucket, 1000, 10})
   plug(Scrybot.Scryfall.Cache.Middleware)
   plug(Tesla.Middleware.BaseUrl, @scryfall_uri)
@@ -158,10 +159,10 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
-  @spec autocomplete(String.t()) :: {:ok, map} | error
-  def autocomplete(partial_name) do
+  @spec autocomplete(String.t(), [keyword]) :: {:ok, map} | error
+  def autocomplete(partial_name, options \\ []) do
     query = [q: partial_name]
-    res = get("/cards/autocomplete", query: query)
+    res = get("/cards/autocomplete", query: query ++ options)
     res |> handle_errors()
   end
 end

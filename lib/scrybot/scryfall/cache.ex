@@ -34,7 +34,7 @@ defmodule Scrybot.Scryfall.Cache.Middleware do
   @moduledoc false
   @behaviour Tesla.Middleware
   require Logger
-  import Scrybot.LogMacros
+  use Scrybot.LogMacros
   alias Scrybot.Scryfall.Cache
 
   @impl Tesla.Middleware

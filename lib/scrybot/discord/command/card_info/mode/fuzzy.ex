@@ -28,9 +28,16 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Fuzzy do
       end
       |> Enum.reject(fn x -> x == :skip end)
 
-    t =
+    resp =
       card_name
       |> Scryfall.Api.cards_named(false, opts)
+
+    t =
+      case resp do
+        {:ok, res} -> {:ok, res}
+        # TODO call autocomplete here maybe?
+        {:error, res, _} -> {:error, res}
+      end
 
     debug("T " <> inspect(t))
 

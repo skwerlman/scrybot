@@ -85,6 +85,11 @@ defmodule Scrybot.Discord.Command do
             error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
 
             error(Exception.format(:error, e, __STACKTRACE__))
+        catch
+          kind, e ->
+            error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
+
+            error(Exception.format(kind, e, __STACKTRACE__))
         end
       end)
 

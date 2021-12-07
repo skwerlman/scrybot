@@ -17,13 +17,12 @@ defmodule Scrybot.Discord.FailureDispatcher do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec handle_info({any, any, :NONE}) :: :ok
-  def handle_info({_level, _message, :NONE}) do
+  @spec handle_info({level, any, atom | Nostrum.Struct.Channel.t()}, :state) :: {:noreply, :state}
+  def handle_info({_level, _message, :NONE}, :state) do
     # this is called during tests
-    :ok
+    {:noreply, :state}
   end
 
-  @spec handle_info({level, any, atom | Nostrum.Struct.Channel.t()}, :state) :: {:noreply, :state}
   def handle_info({_level, embed = %Embed{}, ctx}, :state) do
     _ = Api.create_message(ctx.channel_id, embed: embed)
 
@@ -36,13 +35,7 @@ defmodule Scrybot.Discord.FailureDispatcher do
       |> Embed.put_color(Colors.from_atom(level))
       |> Embed.put_description(message)
 
-    case ctx do
-      :NONE ->
-        :ok
-
-      _ ->
-        _ = Api.create_message(ctx.channel_id, embed: embed)
-    end
+    _ = Api.create_message(ctx.channel_id, embed: embed)
 
     {:noreply, :state}
   end
@@ -53,13 +46,7 @@ defmodule Scrybot.Discord.FailureDispatcher do
       |> Embed.put_color(Colors.from_atom(level))
       |> Embed.put_description(inspect(message))
 
-    case ctx do
-      :NONE ->
-        :ok
-
-      _ ->
-        _ = Api.create_message(ctx.channel_id, embed: embed)
-    end
+    _ = Api.create_message(ctx.channel_id, embed: embed)
 
     {:noreply, :state}
   end

@@ -8,9 +8,9 @@ defmodule Scrybot.Discord.Config do
   alias Nostrum.Struct.{Channel, Guild}
   require Logger
 
-  @spec read_config(non_neg_integer | Nostrum.Struct.Guild.t()) :: map
+  @spec read_config(Nostrum.Snowflake.t() | Nostrum.Struct.Guild.t()) :: map
   def read_config(guild_id) when is_integer(guild_id) do
-    guild = GuildCache.get!(guild_id)
+    {:ok, guild} = GuildCache.get(guild_id)
     read_config(guild)
   end
 
