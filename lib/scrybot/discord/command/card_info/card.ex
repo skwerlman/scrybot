@@ -10,7 +10,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           source: String.t()
         }
 
-  @type price_source :: :usd | :usd_foil | :eur | :tix
+  @type price_source :: :usd | :usd_etched | :usd_foil | :eur | :tix
 
   @type marketplace :: :cardhoarder | :cardmarket | :tcgplayer
 
@@ -228,10 +228,12 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "edhrec" => :edhrec,
     "eur" => :eur,
     "eur_foil" => :eur_foil,
+    "flavor_name" => :flavor_name,
     "flavor_text" => :flavor_text,
     "future" => :future,
     "gatherer" => :gatherer,
     "gladiator" => :gladiator,
+    "historicbrawl" => :historicbrawl,
     "historic" => :historic,
     "id" => :id,
     "illustration_id" => :illustration_id,
@@ -247,6 +249,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "object" => :object,
     "oldschool" => :oldschool,
     "oracle_text" => :oracle_text,
+    "paupercommander" => :paupercommander,
     "pauper" => :pauper,
     "penny" => :penny,
     "pioneer" => :pioneer,
@@ -268,6 +271,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "toughness" => :toughness,
     "type_line" => :type_line,
     "uri" => :uri,
+    "usd_etched" => :usd_etched,
     "usd_foil" => :usd_foil,
     "usd" => :usd,
     "vintage" => :vintage,
@@ -386,7 +390,13 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           value in ["black", "borderless", "gold", "silver", "white"]
 
         :card_back_id ->
-          uuid().(value)
+          unless value do
+            warn("ILLEGAL UUID FOUND FOR `:card_back_id` (#{inspect(value)})")
+          end
+
+          uuid()
+          |> nilable()
+          |> validate(value)
 
         :card_faces ->
           (&Face.valid?/1)
@@ -422,6 +432,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
         :edhrec_rank ->
           non_neg_integer()
+          |> nilable()
+          |> validate(value)
+
+        :flavor_name ->
+          printable()
           |> nilable()
           |> validate(value)
 
@@ -481,6 +496,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           value in @layouts
 
         :legalities ->
+          # TODO map from format instead of any atom
           (&is_atom/1)
           |> map_of(fn v -> v in ["legal", "not_legal", "restricted", "banned"] end)
           |> validate(value)
@@ -551,7 +567,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
 
         :prices ->
           map_of(
-            fn k -> k in [:usd, :usd_foil, :eur, :eur_foil, :tix] end,
+            fn k -> k in [:usd, :usd_etched, :usd_foil, :eur, :eur_foil, :tix] end,
             printable() |> nilable()
           )
           |> validate(value)
@@ -679,10 +695,10 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           |> validate(value)
 
         :__struct__ ->
-          __MODULE__
+          __MODULE__ == value
       end
 
-    if !valid do
+    unless valid do
       warn("key validation failed: #{inspect(key)} => #{inspect(value)}")
     end
 

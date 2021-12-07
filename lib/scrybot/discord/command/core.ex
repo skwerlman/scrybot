@@ -1,6 +1,7 @@
 defmodule Scrybot.Discord.Command.Core do
   @moduledoc false
   use Scrybot.LogMacros
+  alias LibJudge.Filter
   alias Nostrum.Api
   alias Nostrum.Struct.Embed
   alias Scrybot.Discord.Colors
@@ -128,20 +129,14 @@ defmodule Scrybot.Discord.Command.Core do
           |> Embed.put_color(Colors.error())
       else
         _ ->
-          # FIXME: Temp filter until this is added to lib_judge
-          filter = fn
-            {:rule, _} -> true
-            _ -> false
-          end
-
           rule_count =
             Application.get_env(:scrybot, :rules, [])
-            |> Stream.filter(filter)
+            |> Stream.filter(Filter.token_type(:rule))
             |> Enum.count()
 
           other_count =
             Application.get_env(:scrybot, :rules, [])
-            |> Stream.reject(filter)
+            |> Stream.reject(Filter.token_type(:rule))
             |> Enum.count()
 
           finish_time = Time.utc_now()

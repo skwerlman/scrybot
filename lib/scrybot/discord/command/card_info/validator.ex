@@ -50,7 +50,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Validator do
   @doc """
   Accepts a key validator and a value validator, and returns a map validator.
   """
-  @spec map_of((key :: term -> boolean), (val :: term -> boolean)) :: (term -> boolean)
+  @spec map_of((key -> boolean), (val -> boolean)) :: (%{key => val} -> boolean) | (term -> false)
+        when key: term, val: term
   def map_of(key_validator, val_validator) do
     fn
       map when is_map(map) ->

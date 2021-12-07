@@ -6,7 +6,7 @@ defmodule Scrybot.MixProject do
     [
       app: :scrybot,
       version: "0.14.5",
-      elixir: "~> 1.9",
+      elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer()
@@ -35,13 +35,12 @@ defmodule Scrybot.MixProject do
       {:tesla, "~> 1.4"},
       {:toml, "~> 0.6"},
       {:telemetry, "~> 1.0", override: true},
-      {:certifi, "~> 2.7", override: true},
-      {:httpoison, "~> 1.7", override: true},
-      {:poison, "~> 5.0", override: true},
-      {:gun, ">= 2.0.0-rc.2", override: true},
+      # {:prom_ex, "~> 1.3"},
+      {:gun, "~> 2.0", hex: :remedy_gun, override: true},
+      {:cowlib, "~> 2.11.1", hex: :remedy_cowlib, override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
-      {:ex_doc, ">= 0.0.0"},
+      {:ex_doc, ">= 0.0.0", runtime: false, only: :dev},
       {:dialyxir, "~> 1.1", runtime: false, only: [:dev, :test]},
       {:credo, "~> 1.5", runtime: false, only: [:dev, :test]}
     ]

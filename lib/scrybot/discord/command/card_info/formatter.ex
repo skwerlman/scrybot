@@ -42,14 +42,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
 
       false ->
         [
-          %Embed{}
-          |> Embed.put_title(md_escape(card.name))
-          |> Embed.put_url(card.scryfall_uri)
-          |> Embed.put_description(
-            Emoji.emojify(card.mana_cost <> "\n" <> card_description(card))
-          )
-          |> legalities(card.legalities)
-          |> Embed.put_thumbnail(card.image_uris.normal),
+          format(:card, card, meta),
           %Embed{}
           |> rulings(card_rulings)
           |> Embed.put_footer(footer(), @scryfall_icon_uri)
