@@ -150,6 +150,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     :color_identity,
     :color_indicator,
     :colors,
+    :content_warning,
     :digital,
     :edhrec_rank,
     :flavor_text,
@@ -224,6 +225,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "colors" => :colors,
     "commander" => :commander,
     "component" => :component,
+    "content_warning" => :content_warning,
     "duel" => :duel,
     "edhrec" => :edhrec,
     "eur" => :eur,
@@ -286,13 +288,18 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
                    "devoid",
                    "tombstone",
                    "colorshifted",
+                   "inverted",
                    "sunmoondfc",
                    "compasslanddfc",
                    "originpwdfc",
                    "mooneldrazidfc",
-                   "moonreversemoondfc",
+                   "waxingandwaningmoondfc",
                    "showcase",
-                   "extendedart"
+                   "extendedart",
+                   "companion",
+                   "etched",
+                   "snow",
+                   "lesson"
                  ])
 
   @layouts MapSet.new([
@@ -300,8 +307,10 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
              "split",
              "flip",
              "transform",
+             "modal_dfc",
              "meld",
              "leveler",
+             "class",
              "saga",
              "adventure",
              "planar",
@@ -314,7 +323,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
              "host",
              "art_series",
              "double_sided",
-             "modal_dfc",
+             "reversible_card",
              # this one is used internally by the formatter
              "REPLACED_DFT"
            ])
@@ -324,6 +333,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
                "expansion",
                "masters",
                "masterpiece",
+               "arsenal",
                "from_the_vault",
                "spellbook",
                "premium_deck",
@@ -424,6 +434,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
         :colors ->
           color()
           |> list_of()
+          |> nilable()
+          |> validate(value)
+
+        :content_warning ->
+          (&is_boolean/1)
           |> nilable()
           |> validate(value)
 
@@ -608,7 +623,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           |> validate(value)
 
         :rarity ->
-          value in ["common", "uncommon", "rare", "mythic"]
+          value in ["common", "uncommon", "rare", "mythic", "special", "bonus"]
 
         :related_uris ->
           map_of(
