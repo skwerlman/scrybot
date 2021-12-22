@@ -214,6 +214,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
   ]
 
   @known_atom_mapping %{
+    "alchemy" => :alchemy,
     "art_crop" => :art_crop,
     "artist" => :artist,
     "artist_id" => :artist,
