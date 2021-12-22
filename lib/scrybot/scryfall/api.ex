@@ -6,7 +6,7 @@ defmodule Scrybot.Scryfall.Api do
   alias Nostrum.Struct.Embed
   alias Scrybot.Discord.Colors
 
-  @type error :: {:error, Embed.t(), String.t()}
+  @type error :: {:error, Embed.t(), String.t() | nil}
 
   plug(Tesla.Middleware.Telemetry)
   plug(Scrybot.Scryfall.Ratelimiter.Middleware, {:scryfall_bucket, 1000, 10})
@@ -26,7 +26,7 @@ defmodule Scrybot.Scryfall.Api do
         type =
           case b["type"] do
             nil -> ""
-            type -> " (#{type})"
+            type when is_binary(type) -> " (#{type})"
           end
 
         reason =
@@ -36,7 +36,13 @@ defmodule Scrybot.Scryfall.Api do
           |> Embed.put_description(b["details"])
           |> Embed.put_footer("#{api_status} #{code}#{type} (#{status})", nil)
 
-        {:error, reason, b["type"]}
+        ret_type =
+          case b["type"] do
+            nil -> nil
+            type when is_binary(type) -> type
+          end
+
+        {:error, reason, ret_type}
 
       _ ->
         {:ok, resp}
@@ -124,8 +130,8 @@ defmodule Scrybot.Scryfall.Api do
     {:error, reason, ""}
   end
 
-  @spec cards_search(String.t(), [keyword]) :: {:ok, map} | error
-  def cards_search(card_name, options \\ []) do
+  @spec cards_search(String.t(), keyword) :: {:ok, map} | error
+  def cards_search(card_name, options \\ []) when is_binary(card_name) and is_list(options) do
     query = [
       q: card_name,
       format: "json"
@@ -136,8 +142,9 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
-  @spec cards_named(String.t(), boolean, [keyword]) :: {:ok, map} | error
-  def cards_named(card_name, use_exact, options \\ []) do
+  @spec cards_named(String.t(), boolean, keyword) :: {:ok, struct} | error
+  def cards_named(card_name, use_exact, options \\ [])
+      when is_binary(card_name) and is_boolean(use_exact) and is_list(options) do
     query = [
       case use_exact do
         true -> {:exact, card_name}
@@ -151,16 +158,17 @@ defmodule Scrybot.Scryfall.Api do
     res |> handle_errors()
   end
 
-  @spec rulings(String.t()) :: {:ok, map} | error
-  def rulings(card_id) do
+  @spec rulings(String.t()) :: {:ok, struct} | error
+  def rulings(card_id) when is_binary(card_id) do
     query = [format: "json"]
     res = get("/cards/#{card_id}/rulings", query: query)
     # IO.puts("got an answer: #{inspect(res)}")
     res |> handle_errors()
   end
 
-  @spec autocomplete(String.t(), [keyword]) :: {:ok, map} | error
-  def autocomplete(partial_name, options \\ []) do
+  @spec autocomplete(String.t(), keyword) :: {:ok, struct} | error
+  def autocomplete(partial_name, options \\ [])
+      when is_binary(partial_name) and is_list(options) do
     query = [q: partial_name]
     res = get("/cards/autocomplete", query: query ++ options)
     res |> handle_errors()

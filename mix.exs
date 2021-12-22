@@ -62,11 +62,13 @@ defmodule Scrybot.MixProject do
     [
       plt_add_apps: plt,
       flags: [
-        :unmatched_returns,
         :error_handling,
         :race_conditions,
-        :no_opaque,
-        :underspecs
+        # Enable this for debugging only
+        # :specdiffs,
+        :underspecs,
+        :unknown,
+        :unmatched_returns
       ]
     ]
   end

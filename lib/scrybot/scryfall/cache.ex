@@ -65,7 +65,7 @@ defmodule Scrybot.Scryfall.Cache.Middleware do
     end
   end
 
-  def call(_env, _next, _options) do
+  def call(%Tesla.Env{}, _next, _options) do
     {:error, :missing_query_or_url}
   end
 end

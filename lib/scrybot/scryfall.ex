@@ -2,7 +2,7 @@ defmodule Scrybot.Scryfall do
   @moduledoc false
   use Supervisor
 
-  @spec start_link(any()) :: {:error, any()} | {:ok, pid()}
+  @spec start_link(any()) :: {:error, any()} | {:ok, pid()} | :ignore
   def start_link(_) do
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
