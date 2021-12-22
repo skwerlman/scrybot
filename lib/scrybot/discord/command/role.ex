@@ -108,8 +108,7 @@ defmodule Scrybot.Discord.Command.Role do
 
     role_txt =
       allowed_roles
-      |> Enum.map(fn r -> " - #{r.name}" end)
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", fn r -> " - #{r.name}" end)
 
     msg = """
     The roles available for adding are:

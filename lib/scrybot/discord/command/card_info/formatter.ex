@@ -112,8 +112,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
 
     card_list =
       resp.body["data"]
-      |> Enum.map(fn x -> "- #{x}" end)
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", fn x -> "- #{x}" end)
 
     %Embed{}
     |> Embed.put_color(Colors.warning())
