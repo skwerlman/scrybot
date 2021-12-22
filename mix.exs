@@ -33,6 +33,8 @@ defmodule Scrybot.MixProject do
       {:elixir_uuid, "~> 1.2"},
       {:floki, "~> 0.30"},
       {:tesla, "~> 1.4"},
+      {:mint, "~> 1.4"},
+      {:castore, "~> 0.1"},
       {:toml, "~> 0.6"},
       {:telemetry, "~> 1.0", override: true},
       # {:prom_ex, "~> 1.3"},
