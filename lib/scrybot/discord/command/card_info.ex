@@ -35,66 +35,28 @@ defmodule Scrybot.Discord.Command.CardInfo do
         :ok
 
       _ ->
-        # let the user know we're thinking
-        _ = Api.start_typing(message.channel_id)
+        # let the user know we're thinking if its taking a while
+        {:ok, timer_proc} = Task.start(type_after(300, message))
 
-        for request = {mode, query, options} <- requests do
-          debug("request: #{inspect(request)}")
+        results =
+          requests
+          |> Stream.map(&do_request(&1, message))
+          |> Formatter.format()
+          |> Enum.map(fn x ->
+            # cancel the typing timer if its still around
+            # cancelling is idempotent so its fine to do it in a map :)
+            _ = Process.send(timer_proc, :cancel, [])
+            return(x, message)
+          end)
 
-          mode
-          |> case do
-            {:error, _} ->
-              mode
-
-            mode ->
-              with {:ok, info} <- apply(Mode, mode, [query, options, message]),
-                   mapped_mode <- mode_map(mode) do
-                case mapped_mode do
-                  :list ->
-                    {mapped_mode, {info.body, query: query}}
-
-                  :rule ->
-                    {mapped_mode, {info, query: query}}
-
-                  _ ->
-                    {mapped_mode, {Card.from_map(info.body), query: query}}
-                end
-              end
-          end
-          |> case do
-            {:error, embed, options} ->
-              debug("looking at an error here:")
-              debug(inspect(embed))
-              debug(inspect(options))
-
-              case {options, embed} do
-                {"ambiguous", _} ->
-                  {:ok, resp} = Scryfall.Api.autocomplete(query)
-                  {:ambiguous, {resp, query: query}}
-
-                {_, %Embed{}} ->
-                  {:error, embed}
-
-                _ ->
-                  send(
-                    Scrybot.Discord.FailureDispatcher,
-                    {:error, "The query #{inspect(query)} produced an error!", message}
-                  )
-              end
-
-            {:error, {_kind, _info} = t} ->
-              send(
-                Scrybot.Discord.FailureDispatcher,
-                {:error, "The query #{inspect(query)} produced an error!\n`#{inspect(t)}`",
-                 message}
-              )
-
-            card ->
-              card
-          end
+        if results == [] do
+          send(
+            Scrybot.Discord.FailureDispatcher,
+            {:error,
+             "The query resulted in no valid results.\nThis is because of:\n- the errors above (if any)\n- a bug",
+             message}
+          )
         end
-        |> Formatter.format()
-        |> return(message)
 
         :ok
     end
@@ -106,52 +68,95 @@ defmodule Scrybot.Discord.Command.CardInfo do
       :exact -> :card
       :edhrec -> :list
       :search -> :list
+      :price -> :list
       _ -> mode
     end
   end
 
-  defp return([], ctx) do
+  defp do_request(request = {mode, query, options}, message) do
+    debug("request: #{inspect(request)}")
+
+    mode
+    |> apply_request_mode(query, options, message)
+    |> handle_errors(query, message)
+  end
+
+  defp handle_errors({:error, _, "ambiguous"}, query, _) do
+    {:ok, resp} = Scryfall.Api.autocomplete(query)
+    {:ambiguous, {resp, query: query}}
+  end
+
+  defp handle_errors({:error, embed = %Embed{}, _}, _, _) do
+    {:error, embed}
+  end
+
+  defp handle_errors({:error, _, _}, query, message) do
     send(
       Scrybot.Discord.FailureDispatcher,
-      {:error,
-       "The query resulted in no valid results.\nThis is because of:\n- the errors above (if any)\n- a bug",
-       ctx}
+      {:error, "The query #{inspect(query)} produced an error!", message}
     )
   end
 
-  defp return(embeds, ctx) when is_list(embeds) do
-    for embed <- embeds do
-      # create a task to start typing if we get rate limited
-      # we use a task with a delay instead of always sending
-      # so that the indicator doesnt flicker
-      {:ok, timer_proc} = Task.start(type_after(300, ctx))
-      # try to send the message
-      res = Api.create_message(ctx.channel_id, embed: embed)
+  defp handle_errors({:error, t = {_, _}}, query, message) do
+    send(
+      Scrybot.Discord.FailureDispatcher,
+      {:error, "The query #{inspect(query)} produced an error!\n`#{inspect(t)}`", message}
+    )
+  end
 
-      case res do
-        {:ok, _} ->
-          # message is sent, so we cancel the pending typing indicator
-          _ = Process.send(timer_proc, :cancel, [])
-          :ok
+  defp handle_errors(card, _, _), do: card
 
-        {:error, %{response: %{retry_after: wait}, status_code: 429}} ->
-          # if the discord ratelimiter breaks (again), do it ourselves
-          # we already have a pending typing timer, no need to start here
+  defp apply_request_mode(mode = {:error, _}, _query, _options, _message) do
+    mode
+  end
 
-          # sleep for however long discord wants us to
-          # this isnt bulletproof; simultaneous requests break this
-          # but we're only ever here if ratelimiting is already broken
-          Process.sleep(wait)
-          return([embed], ctx)
+  defp apply_request_mode(mode, query, options, message) do
+    with {:ok, info} <- apply(Mode, mode, [query, options, message]),
+         mapped_mode <- mode_map(mode) do
+      case mapped_mode do
+        :list ->
+          {mapped_mode, {info.body, query: query}}
 
-        err ->
-          error(inspect(err))
+        :rule ->
+          {mapped_mode, {info, query: query}}
 
-          send(
-            Scrybot.Discord.FailureDispatcher,
-            {:error, "An embed failed to send. This is a bug.", ctx}
-          )
+        _ ->
+          {mapped_mode, {Card.from_map(info.body), query: query}}
       end
+    end
+  end
+
+  defp return(embed, ctx) do
+    # create a task to start typing if we get rate limited
+    # we use a task with a delay instead of always sending
+    # so that the indicator doesnt flicker
+    {:ok, timer_proc} = Task.start(type_after(300, ctx))
+    # try to send the message
+    res = Api.create_message(ctx.channel_id, embed: embed)
+
+    case res do
+      {:ok, _} ->
+        # message is sent, so we cancel the pending typing indicator
+        _ = Process.send(timer_proc, :cancel, [])
+        :ok
+
+      {:error, %{status_code: 429}} ->
+        # if the discord ratelimiter breaks (again), do it ourselves
+        # we already have a pending typing timer, no need to start here
+
+        # sleep for 3s (dialyzer thinks the ratelimit match was broken)
+        # this isnt bulletproof; simultaneous requests break this
+        # but we're only ever here if ratelimiting is already broken
+        Process.sleep(3000)
+        return([embed], ctx)
+
+      err ->
+        error(inspect(err))
+
+        send(
+          Scrybot.Discord.FailureDispatcher,
+          {:error, "An embed failed to send. This is a bug.", ctx}
+        )
     end
   end
 
