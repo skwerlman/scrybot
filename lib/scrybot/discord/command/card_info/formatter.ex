@@ -16,6 +16,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   @type error :: Scrybot.Scryfall.Api.error()
   @type info :: Card.t() | error()
 
+  # credo:disable-for-next-line Credo.Check.Warning.SpecWithStruct
   @spec format(
           [
             {result_type(),

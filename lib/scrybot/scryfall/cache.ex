@@ -38,17 +38,17 @@ defmodule Scrybot.Scryfall.Cache.Middleware do
   alias Scrybot.Scryfall.Cache
 
   @impl Tesla.Middleware
-  @spec call(atom | %Tesla.Env{query: any, url: any}, any, any) :: Tesla.Env.result()
-  def call(env, next, _options) do
-    case ConCache.get(Cache.id(), {env.url, env.query}) do
+  @spec call(Tesla.Env.t(), any, any) :: Tesla.Env.result()
+  def call(env = %Tesla.Env{query: query, url: url}, next, _options) do
+    case ConCache.get(Cache.id(), {url, query}) do
       nil ->
-        info("hitting the real api: #{inspect({env.url, env.query})}")
+        info("hitting the real api: #{inspect({url, query})}")
         {status, result} = Tesla.run(env, next)
 
         if status == :ok do
           case result do
             %{status: status} when status in 200..299 ->
-              ConCache.put(Cache.id(), {env.url, env.query}, result.body)
+              ConCache.put(Cache.id(), {url, query}, result.body)
 
             %{status: status} ->
               warn("not caching: status #{inspect(status)}")
@@ -63,5 +63,9 @@ defmodule Scrybot.Scryfall.Cache.Middleware do
         debug("url was cached")
         {:ok, %{env | body: cached}}
     end
+  end
+
+  def call(_env, _next, _options) do
+    {:error, :missing_query_or_url}
   end
 end

@@ -5,6 +5,7 @@ defmodule Scrybot.Discord.Worker do
   use Nostrum.Consumer
 
   # @spec start_link() :: Supervisor.on_start() | no_return()
+  @spec start_link :: :ignore | {:error, any} | {:ok, pid}
   def start_link do
     Consumer.start_link(__MODULE__)
   end
