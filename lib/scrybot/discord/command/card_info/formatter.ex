@@ -23,23 +23,21 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
              Card.t() | {Card.t(), keyword()} | {Card.t(), keyword(), [Ruling.t()]}}
           ]
           | %Stream{}
-        ) :: [Embed.t()]
+        ) :: Enum.t()
   def format(cards) do
-    for {type, info} <- cards do
-      case info do
-        {card, meta, rulings} -> format(type, card, meta, rulings)
-        {card, meta} -> format(type, card, meta)
-        card -> format(type, card, [])
-      end
-    end
-    |> List.flatten()
+    Stream.flat_map(cards, fn
+      {type, {card, meta, rulings}} -> format(type, card, meta, rulings)
+      {type, {card, meta}} -> format(type, card, meta)
+      {type, card} -> format(type, card, [])
+    end)
   end
 
-  @spec format(result_type(), Card.t(), keyword(), [Ruling.t()]) :: Embed.t() | [Embed.t()]
+  @spec format(result_type(), Card.t(), keyword(), [Ruling.t()]) :: [Embed.t()]
   def format(:card, card, meta, card_rulings) do
     case fits_limits?(card, card_rulings) do
       true ->
-        rulings(format(:card, card, meta), card_rulings)
+        [crd] = format(:card, card, meta)
+        [rulings(crd, card_rulings)]
 
       false ->
         [
@@ -55,40 +53,48 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     raise "Cannot apply rulings to a result of type #{inspect(type)}"
   end
 
-  @spec format(result_type(), Card.t(), keyword()) :: Embed.t() | [Embed.t()]
+  @spec format(result_type(), Card.t(), keyword()) :: [Embed.t()]
   def format(:art, card, meta) do
     warn(inspect(card))
     warn(inspect(card.card_faces))
 
-    case card do
-      %Card{card_faces: faces} when no(faces) ->
-        %Embed{}
-        |> Embed.put_color(Colors.success())
-        |> Embed.put_title("#{card.name} (#{card.set |> String.upcase()})")
-        |> Embed.put_field("Artist", card.artist)
-        |> Embed.put_url(card.scryfall_uri)
-        |> Embed.put_image(card.image_uris.art_crop)
-        |> Embed.put_footer(footer(), @scryfall_icon_uri)
+    e =
+      case card do
+        %Card{card_faces: faces} when no(faces) ->
+          %Embed{}
+          |> Embed.put_color(Colors.success())
+          |> Embed.put_title("#{card.name} (#{card.set |> String.upcase()})")
+          |> Embed.put_field("Artist", card.artist)
+          |> Embed.put_url(card.scryfall_uri)
+          |> Embed.put_image(card.image_uris.art_crop)
+          |> Embed.put_footer(footer(), @scryfall_icon_uri)
 
-      _ ->
-        flat_format(:art, card, meta)
-    end
+        _ ->
+          flat_format(:art, card, meta)
+      end
+
+    [e]
   end
 
   def format(:card, card, meta) do
-    case card do
-      %Card{card_faces: faces} when no(faces) ->
-        %Embed{}
-        |> Embed.put_title(md_escape(card.name))
-        |> Embed.put_url(card.scryfall_uri)
-        |> Embed.put_description(Emoji.emojify(card.mana_cost <> "\n" <> card_description(card)))
-        |> legalities(card.legalities)
-        |> Embed.put_thumbnail(card.image_uris.normal)
-        |> Embed.put_footer(footer(), @scryfall_icon_uri)
+    e =
+      case card do
+        %Card{card_faces: faces} when no(faces) ->
+          %Embed{}
+          |> Embed.put_title(md_escape(card.name))
+          |> Embed.put_url(card.scryfall_uri)
+          |> Embed.put_description(
+            Emoji.emojify(card.mana_cost <> "\n" <> card_description(card))
+          )
+          |> legalities(card.legalities)
+          |> Embed.put_thumbnail(card.image_uris.normal)
+          |> Embed.put_footer(footer(), @scryfall_icon_uri)
 
-      _ ->
-        flat_format(:card, card, meta)
-    end
+        _ ->
+          flat_format(:card, card, meta)
+      end
+
+    [e]
   end
 
   def format(:list, resp, _meta) do
@@ -100,10 +106,13 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
     count = resp["total_cards"]
     count2 = card_list |> Enum.count()
 
-    %Embed{}
-    |> Embed.put_color(Colors.success())
-    |> Embed.put_title("Showing results 1-#{count2} of #{count}")
-    |> Embed.put_description(card_list |> Enum.join("\n"))
+    e =
+      %Embed{}
+      |> Embed.put_color(Colors.success())
+      |> Embed.put_title("Showing results 1-#{count2} of #{count}")
+      |> Embed.put_description(card_list |> Enum.join("\n"))
+
+    [e]
   end
 
   def format(:ambiguous, resp, query: query) do
@@ -114,15 +123,18 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
       resp.body["data"]
       |> Enum.map_join("\n", fn x -> "- #{x}" end)
 
-    %Embed{}
-    |> Embed.put_color(Colors.warning())
-    |> Embed.put_title("Ambiguous query")
-    |> Embed.put_description("""
-    The query \"#{query}\" matches too many cards.
-    Did you mean one of these?
+    e =
+      %Embed{}
+      |> Embed.put_color(Colors.warning())
+      |> Embed.put_title("Ambiguous query")
+      |> Embed.put_description("""
+      The query \"#{query}\" matches too many cards.
+      Did you mean one of these?
 
-    #{card_list}
-    """)
+      #{card_list}
+      """)
+
+    [e]
   end
 
   def format(:rule, rules, _meta) do
@@ -157,7 +169,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   end
 
   def format(:error, card, _meta) do
-    card
+    [card]
   end
 
   defp flat_format(type, card = %Card{layout: "double_faced_token"}, meta = [query: query]) do
