@@ -272,6 +272,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   end
 
   @spec md_escape(String.t()) :: String.t()
+  @spec md_escape(nil) :: nil
   def md_escape(text) when is_binary(text) do
     text
     |> String.replace("_", "\\_")
