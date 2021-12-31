@@ -26,9 +26,9 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
         ) :: Enum.t()
   def format(cards) do
     Stream.flat_map(cards, fn
-      {type, {card, meta, rulings}} -> format(type, card, meta, rulings)
-      {type, {card, meta}} -> format(type, card, meta)
-      {type, card} -> format(type, card, [])
+      {type, {card, meta, rulings}} -> List.flatten(format(type, card, meta, rulings))
+      {type, {card, meta}} -> List.flatten(format(type, card, meta))
+      {type, card} -> List.flatten(format(type, card, []))
     end)
   end
 
