@@ -26,7 +26,7 @@ defmodule Scrybot.MixProject do
     [
       {:lib_judge, "~> 0.4"},
       # {:nostrum, path: "/mnt/code/nostrum"},
-      {:nostrum, github: "kraigie/nostrum"},
+      {:nostrum, "~> 0.5"},
       {:con_cache, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:ex_rated, "~> 2.0"},
