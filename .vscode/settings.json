@@ -1,3 +1,9 @@
 {
-    "elixirLinter.useStrict": true
+    "elixirLinter.useStrict": true,
+    "elixirLS.dialyzerWarnOpts": [
+        "error_handling",
+        "underspecs",
+        "unmatched_returns",
+        "unknown"
+    ]
 }
