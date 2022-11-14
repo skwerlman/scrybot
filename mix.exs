@@ -5,8 +5,8 @@ defmodule Scrybot.MixProject do
   def project do
     [
       app: :scrybot,
-      version: "0.7.0",
-      elixir: "~> 1.8",
+      version: "0.15.0",
+      elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer()
@@ -24,19 +24,27 @@ defmodule Scrybot.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nostrum, git: "https://github.com/Kraigie/nostrum.git"},
-      {:con_cache, "~> 0.13"},
-      {:jason, "~> 1.1"},
-      {:ex_rated, "~> 1.3"},
+      {:lib_judge, "~> 0.4"},
+      # {:nostrum, path: "/mnt/code/nostrum"},
+      {:nostrum, "~> 0.5"},
+      {:con_cache, "~> 1.0"},
+      {:jason, "~> 1.2"},
+      {:ex_rated, "~> 2.0"},
       {:elixir_uuid, "~> 1.2"},
-      {:tesla, "~> 1.2"},
-      {:httpoison, "~> 1.4", override: true},
-      {:nimble_parsec, "~> 0.5"},
+      {:floki, "~> 0.30"},
+      {:tesla, "~> 1.4"},
+      {:mint, "~> 1.4"},
+      {:castore, "~> 0.1"},
+      {:toml, "~> 0.6"},
+      {:telemetry, "~> 1.0", override: true},
+      # {:prom_ex, "~> 1.3"},
+      {:gun, "~> 2.0", hex: :remedy_gun, override: true},
+      {:cowlib, "~> 2.11.1", hex: :remedy_cowlib, override: true},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
-      {:distillery, "~> 2.0", runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.4", runtime: false, only: [:dev, :test]},
-      {:credo, "~> 1.0", runtime: false, only: [:dev, :test]}
+      {:ex_doc, ">= 0.0.0", runtime: false, only: :dev},
+      {:dialyxir, "~> 1.1", runtime: false, only: [:dev, :test]},
+      {:credo, "~> 1.5", runtime: false, only: [:dev, :test]}
     ]
   end
 
@@ -54,11 +62,13 @@ defmodule Scrybot.MixProject do
     [
       plt_add_apps: plt,
       flags: [
-        :unmatched_returns,
         :error_handling,
         :race_conditions,
-        :no_opaque,
-        :underspecs
+        # Enable this for debugging only
+        # :specdiffs,
+        :underspecs,
+        :unknown,
+        :unmatched_returns
       ]
     ]
   end

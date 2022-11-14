@@ -1,4 +1,5 @@
 defmodule Scrybot.Discord.Behaviour.ReactionHandler do
   @moduledoc false
-  @callback do_reaction_command(mode :: :add | :remove, reaction :: map()) :: :ok
+  @type mode() :: :add | :remove
+  @callback do_reaction_command(mode(), reaction :: map()) :: :ok
 end

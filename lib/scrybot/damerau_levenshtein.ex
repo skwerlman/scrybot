@@ -49,34 +49,19 @@ defmodule Scrybot.DamerauLevenshtein do
     distance(candidate, target, k) <= k
   end
 
-  # handle simplest cases breezily
-
-  @doc """
-  no max cost provided
-  """
-  def distance(a, b) do
-    distance(a, b, 10)
-  end
-
-  @doc """
-  initialize current_cost state
-  """
-  def distance(a, b, max) do
+  # initialize current_cost state
+  def distance(a, b, max \\ 10) do
     distance(a, b, max, 0)
   end
 
-  @doc """
-  current_cost exceeds max_cost
-  """
+  # current_cost exceeds max_cost
   def distance(_, _, max_cost, current_cost) when current_cost > max_cost do
     # can't error or raise here since other recursions may find smaller costs, so just return max+1
     # also because the distance function is expected to return an integer.
     max_cost + 1
   end
 
-  @doc """
-  empty strings
-  """
+  # empty strings
   def distance("", "", _max_cost, current_cost) do
     # IO.puts "Remaining strings empty"
     current_cost
@@ -90,17 +75,13 @@ defmodule Scrybot.DamerauLevenshtein do
     current_cost + String.length(a)
   end
 
-  @doc """
-  two equivalent strings
-  """
+  # two equivalent strings
   def distance(same, same, _max_cost, current_cost) do
     # IO.puts "Remaining strings the same: #{same}"
     current_cost
   end
 
-  @doc """
-  if both heads are the same, advance both
-  """
+  # if both heads are the same, advance both
   def distance(
         <<equal_char::utf8, candidate_tail::binary>>,
         <<equal_char::utf8, target_tail::binary>>,
@@ -111,9 +92,7 @@ defmodule Scrybot.DamerauLevenshtein do
     distance(candidate_tail, target_tail, max_cost, current_cost)
   end
 
-  @doc """
-  heads are different, but a transposition is in place. advance both and increment cost by 1
-  """
+  # heads are different, but a transposition is in place. advance both and increment cost by 1
   def distance(
         <<first_char::utf8, second_char::utf8, candidate_tail::binary>>,
         <<second_char::utf8, first_char::utf8, target_tail::binary>>,
@@ -124,10 +103,9 @@ defmodule Scrybot.DamerauLevenshtein do
     distance(candidate_tail, target_tail, max_cost, current_cost + 1)
   end
 
-  @doc """
-  heads are different, assume a substitution OR 1 deletion in either side (an insertion relative to the other side) and return minimum value of all costs.
-  Note that this is where runtimes can get hairy in worst cases, there's no TCO here
-  """
+  # heads are different, assume a substitution OR 1 deletion in either side
+  # (an insertion relative to the other side) and return minimum value of all costs.
+  # Note that this is where runtimes can get hairy in worst cases, there's no TCO here
   def distance(
         whole_candidate = <<_candidate_head::utf8, candidate_tail::binary>>,
         whole_target = <<_target_head::utf8, target_tail::binary>>,

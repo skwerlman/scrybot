@@ -34,3 +34,6 @@ scrybot-*.tar
 /.elixir_ls/
 
 .mix_tasks
+
+# Ignore MTG rules files
+/priv/data/*.txt

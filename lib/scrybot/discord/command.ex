@@ -1,25 +1,32 @@
 defmodule Scrybot.Discord.Command do
   @moduledoc false
-  require Logger
-  import Scrybot.LogMacros
+  use Scrybot.LogMacros
 
+  @spec handlers :: [module()]
   def handlers do
     Application.get_env(
       :scrybot,
       :command_handlers,
       [
         Scrybot.Discord.Command.CardInfo,
-        Scrybot.Discord.Command.Core
+        Scrybot.Discord.Command.Core,
+        Scrybot.Discord.Command.Replacer,
+        Scrybot.Discord.Command.Role,
+        # Scrybot.Discord.Command.Pinboard,
+        # Scrybot.Discord.Command.Testing
       ]
     )
   end
 
+  @spec react_handlers :: [module()]
   def react_handlers do
     Application.get_env(
       :scrybot,
       :react_handlers,
       [
+        # Scrybot.Discord.Command.Pinboard,
         Scrybot.Discord.Command.Turtler3000
+        # Scrybot.Discord.Command.Scoreboard
       ]
     )
   end
@@ -36,6 +43,7 @@ defmodule Scrybot.Discord.Command do
     end)
   end
 
+  @spec do_command(atom(), message :: map()) :: :ok
   def do_command(module, message) do
     _ =
       Task.start(fn ->
@@ -51,36 +59,22 @@ defmodule Scrybot.Discord.Command do
           end
         rescue
           e ->
-            errmsg =
-              case message do
-                %Nostrum.Struct.Message{} ->
-                  "Command execution failed for: #{inspect(message.content)}"
-
-                _ ->
-                  "Command execution failed for: #{inspect(message)}"
-              end
-
-            trace = Exception.format(:error, e, __STACKTRACE__)
-
-            error(errmsg)
-            error(trace)
-
-            Nostrum.Api.create_message(message.channel_id, """
-            :bomb: Sorry, an internal error occurred.
-
-            `#{inspect(e)}`
-
-            **Details:**
-            ```
-            #{trace}
-            ```
-            """)
+            bomb(e, Exception.format(:error, e, __STACKTRACE__), message)
+        catch
+          kind, e ->
+            bomb(e, Exception.format(kind, e, __STACKTRACE__), message)
         end
       end)
 
     :ok
   end
 
+  @spec do_reaction_command(
+          atom(),
+          Scrybot.Discord.Behaviour.ReactionHandler.mode(),
+          reaction :: map()
+        ) ::
+          :ok
   def do_reaction_command(module, mode, reaction) do
     _ =
       Task.start(fn ->
@@ -91,16 +85,68 @@ defmodule Scrybot.Discord.Command do
             error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
 
             error(Exception.format(:error, e, __STACKTRACE__))
+        catch
+          kind, e ->
+            error("Command execution failed for: #{inspect(mode)} #{inspect(reaction)}")
+
+            error(Exception.format(kind, e, __STACKTRACE__))
         end
       end)
 
     :ok
   end
 
+  @spec init :: :ok
   def init do
     [handlers(), react_handlers()]
     |> Stream.concat()
     |> Stream.uniq()
     |> Enum.each(&init_once(&1))
+  end
+
+  defp bomb(err, trace, message) do
+    errmsg =
+      case message do
+        %Nostrum.Struct.Message{} ->
+          "Command execution failed for: #{inspect(message.content)}"
+
+        _ ->
+          "Command execution failed for: #{inspect(message)}"
+      end
+
+    res =
+      Nostrum.Api.create_message(message.channel_id, """
+      :bomb: Sorry, an internal error occurred.
+
+      `#{inspect(err)}`
+
+      **Details:**
+      ```
+      #{trace}
+      ```
+      """)
+
+    debug(inspect(res))
+
+    _ =
+      case res do
+        {:error, _reason} ->
+          Nostrum.Api.create_message(message.channel_id, """
+          :bomb: Sorry, an internal error occurred.
+
+          `#{inspect(err)}`
+
+          Details could not be uploaded due to size. Please check the log.
+
+          msgref `#{inspect(message.id)}`
+          """)
+
+        _ ->
+          :ok
+      end
+
+    error("msgref #{inspect(message.id)}")
+    error(errmsg)
+    error(trace)
   end
 end

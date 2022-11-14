@@ -4,7 +4,16 @@ defmodule Scrybot.Application do
   @moduledoc false
   use Application
 
+  @spec start(any, any) :: {:error, any} | {:ok, pid}
   def start(_type, _args) do
+    # Load MTG rules into memory before starting
+    rules =
+      :current
+      |> LibJudge.get!()
+      |> LibJudge.tokenize()
+
+    Application.put_env(:scrybot, :rules, rules)
+
     # List all child processes to be supervised
     children = [
       Scrybot.Scryfall,
