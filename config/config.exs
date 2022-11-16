@@ -1,5 +1,24 @@
 import Config
 
+# NOTE: these intents must be enabled in the discord application manager!
+privileged_intents = [
+  :message_content
+]
+
+# See https://kraigie.github.io/nostrum/gateway-intents.html for info about intents
+config :nostrum,
+  gateway_intents:
+    [
+      :guilds,
+      :guild_emojis,
+      :guild_webhooks,
+      :guild_messages,
+      :guild_message_reactions,
+      :direct_messages,
+      :direct_message_reactions,
+      :direct_message_typing
+    ] ++ privileged_intents
+
 config :scrybot,
   workers: :auto
 
