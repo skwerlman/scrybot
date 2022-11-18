@@ -29,7 +29,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
       Filter.any([
         Filter.rule_is(query),
         Filter.rule_starts_with(query),
-        Filter.body_contains(query)
+        body_contains_insensitive(query)
       ])
 
     all_matches =
@@ -48,5 +48,18 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
     end
 
     {:ok, matches}
+  end
+
+  defp body_contains_insensitive(text) do
+    fn
+      {:rule, {_type, _rule, body, _examples}} when is_binary(body) ->
+        String.contains?(
+          String.downcase(body),
+          String.downcase(text)
+        )
+
+      _ ->
+        false
+    end
   end
 end
