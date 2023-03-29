@@ -222,6 +222,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "brawl" => :brawl,
     "cardhoarder" => :cardhoarder,
     "cardmarket" => :cardmarket,
+    "cmc" => :cmc,
     "color_indicator" => :color_indicator,
     "colors" => :colors,
     "commander" => :commander,
@@ -231,6 +232,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "edhrec" => :edhrec,
     "eur" => :eur,
     "eur_foil" => :eur_foil,
+    "exploror" => :explorer,
     "flavor_name" => :flavor_name,
     "flavor_text" => :flavor_text,
     "future" => :future,
@@ -242,6 +244,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "illustration_id" => :illustration_id,
     "image_uris" => :image_uris,
     "large" => :large,
+    "layout" => :layout,
     "legacy" => :legacy,
     "loyalty" => :loyalty,
     "mana_cost" => :mana_cost,
@@ -249,8 +252,10 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "mtgtop8" => :mtgtop8,
     "name" => :name,
     "normal" => :normal,
+    "oathbreaker" => :oathbreaker,
     "object" => :object,
     "oldschool" => :oldschool,
+    "oracle_id" => :oracle_id,
     "oracle_text" => :oracle_text,
     "paupercommander" => :paupercommander,
     "pauper" => :pauper,
@@ -258,6 +263,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     "pioneer" => :pioneer,
     "png" => :png,
     "power" => :power,
+    "predh" => :predh,
     "premodern" => :premodern,
     "previewed_at" => :previewed_at,
     "printed_name" => :printed_name,
@@ -300,7 +306,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
                    "companion",
                    "etched",
                    "snow",
-                   "lesson"
+                   "lesson",
+                   "shatteredglass",
+                   "convertdfc",
+                   "fandfc",
+                   "upsidedowndfc"
                  ])
 
   @layouts MapSet.new([
@@ -314,6 +324,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
              "class",
              "saga",
              "adventure",
+             "battle",
              "planar",
              "scheme",
              "vanguard",
@@ -323,7 +334,6 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
              "augment",
              "host",
              "art_series",
-             "double_sided",
              "reversible_card",
              # this one is used internally by the formatter
              "REPLACED_DFT"
