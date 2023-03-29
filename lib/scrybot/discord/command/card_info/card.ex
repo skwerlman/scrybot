@@ -176,6 +176,7 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
     :name,
     :nonfoil,
     :object,
+    :oracle_id,
     :oracle_text,
     :oversized,
     :power,
