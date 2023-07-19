@@ -26,7 +26,7 @@ defmodule Scrybot.MixProject do
     [
       {:lib_judge, "~> 0.4"},
       # {:nostrum, path: "/mnt/code/nostrum"},
-      {:nostrum, "~> 0.6"},
+      {:nostrum, ">= 0.6.0 and < 0.7.0"},
       {:con_cache, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:ex_rated, "~> 2.0"},
@@ -34,7 +34,7 @@ defmodule Scrybot.MixProject do
       {:floki, "~> 0.34"},
       {:tesla, "~> 1.4"},
       {:mint, "~> 1.4"},
-      {:castore, "~> 0.1"},
+      {:castore, "~> 1.0"},
       {:toml, "~> 0.7"},
       {:telemetry, "~> 1.1", override: true},
       # {:prom_ex, "~> 1.3"},
@@ -43,8 +43,8 @@ defmodule Scrybot.MixProject do
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:ex_doc, ">= 0.0.0", runtime: false, only: :dev},
-      {:dialyxir, "~> 1.2", runtime: false, only: [:dev, :test]},
-      {:credo, "~> 1.6", runtime: false, only: [:dev, :test]}
+      {:dialyxir, "~> 1.3", runtime: false, only: [:dev, :test]},
+      {:credo, "~> 1.7", runtime: false, only: [:dev, :test]}
     ]
   end
 
