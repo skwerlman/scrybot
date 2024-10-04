@@ -45,13 +45,13 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
 
     matches =
       if count > limit do
-        all_matches
-        |> Enum.take(limit)
-
         send(
           Scrybot.Discord.FailureDispatcher,
           {:success, "Showing #{limit} of #{count} results", ctx}
         )
+
+        all_matches
+        |> Enum.take(limit)
       else
         all_matches
       end
