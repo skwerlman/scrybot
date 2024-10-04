@@ -12,10 +12,10 @@ config :nostrum,
   gateway_intents:
     [
       :guilds,
-      :guild_emojis,
       :guild_webhooks,
       :guild_messages,
       :guild_message_reactions,
+      :guild_message_typing,
       :direct_messages,
       :direct_message_reactions,
       :direct_message_typing
