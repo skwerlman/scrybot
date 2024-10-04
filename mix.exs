@@ -39,11 +39,14 @@ defmodule Scrybot.MixProject do
       {:telemetry, "~> 1.1", override: true},
       # {:prom_ex, "~> 1.3"},
       {:gun, "~> 2.0", hex: :remedy_gun, override: true},
+      # {:gun, "~> 2.0"},
       {:cowlib, "~> 2.11.1", hex: :remedy_cowlib, override: true},
+      # {:cowlib, "~> 2.11"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:ex_doc, ">= 0.0.0", runtime: false, only: :dev},
       {:dialyxir, "~> 1.3", runtime: false, only: [:dev, :test]},
+      {:gradient, github: "esl/gradient", runtime: false, only: [:dev, :test]},
       {:credo, "~> 1.7", runtime: false, only: [:dev, :test]}
     ]
   end
