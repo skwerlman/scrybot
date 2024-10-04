@@ -33,16 +33,17 @@ config :logger, :file_logger,
   default_level: :debug,
   level_config: [],
   metadata: [:application, :module, :function],
-  format: "$time $metadata[$level]$levelpad $message\n",
+  format: "$time $metadata[$level] $message\n",
   path: "log/scrybot.log"
 
 config :logger, :default_logger,
   logger: :console,
   default_level: :info,
   level_config: [
-    [application: :scrybot, module: Scrybot, level: :debug]
+    [application: :scrybot, module: Scrybot, level: :debug],
+    [application: :lib_judge, module: Scrybot, level: :debug]
   ],
-  format: "$time [$level]$levelpad $message\n"
+  format: "$time [$level] $message\n"
 
 config :tesla, Tesla.Middleware.Telemetry, disable_legacy_event: true
 

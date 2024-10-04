@@ -16,18 +16,17 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
   @type error :: Scrybot.Scryfall.Api.error()
   @type info :: Card.t() | error()
 
-  # credo:disable-for-next-line Credo.Check.Warning.SpecWithStruct
   @spec format(
-          [
+          Enumerable.t(
             {result_type(),
              Card.t() | {Card.t(), keyword()} | {Card.t(), keyword(), [Ruling.t()]}}
-          ]
-          | %Stream{}
+          )
         ) :: Enum.t()
   def format(cards) do
     Stream.flat_map(cards, fn
       {type, {card, meta, rulings}} -> List.flatten(format(type, card, meta, rulings))
       {type, {card, meta}} -> List.flatten(format(type, card, meta))
+      {:error, _, _} = error -> [error]
       {type, card} -> List.flatten(format(type, card, []))
     end)
   end
@@ -55,8 +54,8 @@ defmodule Scrybot.Discord.Command.CardInfo.Formatter do
 
   @spec format(result_type(), Card.t(), keyword()) :: [Embed.t()]
   def format(:art, card, meta) do
-    warn(inspect(card))
-    warn(inspect(card.card_faces))
+    # warn(inspect(card))
+    # warn(inspect(card.card_faces))
 
     e =
       case card do

@@ -2,6 +2,11 @@ defmodule Scrybot.Discord.Command do
   @moduledoc false
   use Scrybot.LogMacros
 
+  # when this is made configurable, it _must_ be available at compile time for it to be used in pattern matching
+  @admin_id 96_197_471_641_812_992
+
+  defguard from_admin(message) when message.author.id == @admin_id
+
   @spec handlers :: [module()]
   def handlers do
     Application.get_env(

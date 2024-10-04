@@ -3,10 +3,9 @@ defmodule Scrybot.Discord.Command.Core do
   use Scrybot.LogMacros
   alias LibJudge.Filter
   alias Nostrum.Api
-  alias Nostrum.Struct.Embed
+  alias Nostrum.Struct.{Embed, Message}
   alias Scrybot.Discord.Colors
-
-  @admin_id 96_197_471_641_812_992
+  import Scrybot.Discord.Command, only: [from_admin: 1]
 
   @behaviour Scrybot.Discord.Behaviour.Handler
   @behaviour Scrybot.Discord.Behaviour.CommandHandler
@@ -21,21 +20,23 @@ defmodule Scrybot.Discord.Command.Core do
 
   @impl Scrybot.Discord.Behaviour.CommandHandler
   @spec do_command(Nostrum.Struct.Message.t()) :: :ok
-  def do_command(message) do
-    case message.content do
-      "!!quit now" ->
+  def do_command(message = %Message{content: content}) do
+    case content do
+      "!!quit now" when from_admin(message) ->
         quit(message)
 
       ".scry version" ->
         version(message)
 
-      ".scry rule_reload" ->
+      ".scry rule_reload" when from_admin(message) ->
         rule_reload(message)
 
       _ ->
         :ok
     end
   end
+
+  def do_command(_), do: :ok
 
   defp dep_vsns do
     deps =
@@ -90,10 +91,6 @@ defmodule Scrybot.Discord.Command.Core do
 
     embed =
       try do
-        if ctx.author.id != @admin_id do
-          throw(:unauthorized)
-        end
-
         rules =
           :current
           |> LibJudge.get!()
@@ -107,7 +104,7 @@ defmodule Scrybot.Discord.Command.Core do
           |> Embed.put_description("""
           An error occurred while reloading:
           ```
-          #{err}
+          #{inspect(err)}
           ```
           """)
           |> Embed.put_color(Colors.error())
@@ -119,23 +116,17 @@ defmodule Scrybot.Discord.Command.Core do
           The call to `put_env` timed out!
           """)
           |> Embed.put_color(Colors.error())
-
-        :unauthorized ->
-          %Embed{}
-          |> Embed.put_title("Reload Failed")
-          |> Embed.put_description("""
-          Sorry, only bot admins can reload the rules.
-          """)
-          |> Embed.put_color(Colors.error())
       else
         _ ->
+          rules = Application.get_env(:scrybot, :rules, [])
+
           rule_count =
-            Application.get_env(:scrybot, :rules, [])
+            rules
             |> Stream.filter(Filter.token_type(:rule))
             |> Enum.count()
 
           other_count =
-            Application.get_env(:scrybot, :rules, [])
+            rules
             |> Stream.reject(Filter.token_type(:rule))
             |> Enum.count()
 
@@ -173,10 +164,8 @@ defmodule Scrybot.Discord.Command.Core do
   end
 
   defp quit(ctx) do
-    if ctx.author.id == @admin_id do
-      {_, _} = Api.create_message(ctx.channel_id, content: "Exiting...")
-      System.stop()
-      :ok
-    end
+    {_, _} = Api.create_message(ctx.channel_id, content: "Exiting...")
+    System.stop()
+    :ok
   end
 end

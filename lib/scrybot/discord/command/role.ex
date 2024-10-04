@@ -32,19 +32,19 @@ defmodule Scrybot.Discord.Command.Role do
     guild = message.guild_id
     config = Config.read_config(guild)
     allowed_role_ids = config["role"]["allowed"]
-    info(inspect(allowed_role_ids))
+    debug(inspect(allowed_role_ids))
 
     roles = Api.get_guild_roles!(guild)
-    info(inspect(roles))
+    debug(inspect(roles))
 
     allowed_roles =
       allowed_role_ids
       |> Enum.map(fn rid -> Enum.find(roles, fn r -> r.id == rid end) end)
 
-    info(inspect(allowed_roles))
+    debug(inspect(allowed_roles))
 
     role = Enum.find(allowed_roles, fn r -> r.name == role_name end)
-    info(inspect(role))
+    debug(inspect(role))
 
     if role do
       {:ok, user} = Api.get_guild_member(guild, message.author.id)
@@ -66,19 +66,19 @@ defmodule Scrybot.Discord.Command.Role do
     guild = message.guild_id
     config = Config.read_config(guild)
     allowed_role_ids = config["role"]["allowed"]
-    info(inspect(allowed_role_ids))
+    debug(inspect(allowed_role_ids))
 
     roles = Api.get_guild_roles!(guild)
-    info(inspect(roles))
+    debug(inspect(roles))
 
     allowed_roles =
       allowed_role_ids
       |> Enum.map(fn rid -> Enum.find(roles, fn r -> r.id == rid end) end)
 
-    info(inspect(allowed_roles))
+    debug(inspect(allowed_roles))
 
     role = Enum.find(allowed_roles, fn r -> r.name == role_name end)
-    info(inspect(role))
+    debug(inspect(role))
 
     if role do
       {:ok, user} = Api.get_guild_member(guild, message.author.id)
