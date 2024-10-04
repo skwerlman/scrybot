@@ -10,26 +10,9 @@ defmodule Scrybot.Discord do
   end
 
   defp children do
-    schedulers = System.schedulers_online()
-    target_workers = Application.get_env(:scrybot, :workers, :auto)
-
-    workers =
-      case target_workers do
-        :auto -> schedulers
-        _ -> target_workers
-      end
-
-    consumers =
-      for i <- 1..workers do
-        Supervisor.child_spec(
-          Scrybot.Discord.Worker,
-          id: {Scrybot.Discord.Worker, i}
-        )
-      end
-
     [
-      Scrybot.Discord.FailureDispatcher
-      | consumers
+      Scrybot.Discord.FailureDispatcher,
+      Scrybot.Discord.Worker
     ]
   end
 

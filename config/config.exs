@@ -5,6 +5,8 @@ privileged_intents = [
   :message_content
 ]
 
+config :nostrum, :streamlink, false
+
 # See https://kraigie.github.io/nostrum/gateway-intents.html for info about intents
 config :nostrum,
   gateway_intents:
@@ -18,9 +20,6 @@ config :nostrum,
       :direct_message_reactions,
       :direct_message_typing
     ] ++ privileged_intents
-
-config :scrybot,
-  workers: :auto
 
 config :logger,
   backends: [

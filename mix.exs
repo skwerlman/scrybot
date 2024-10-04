@@ -25,8 +25,7 @@ defmodule Scrybot.MixProject do
   defp deps do
     [
       {:lib_judge, "~> 0.4"},
-      # {:nostrum, path: "/mnt/code/nostrum"},
-      {:nostrum, ">= 0.6.0 and < 0.7.0"},
+      {:nostrum, "~> 0.10"},
       {:con_cache, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:ex_rated, "~> 2.0"},
@@ -37,11 +36,6 @@ defmodule Scrybot.MixProject do
       {:castore, "~> 1.0"},
       {:toml, "~> 0.7"},
       {:telemetry, "~> 1.1", override: true},
-      # {:prom_ex, "~> 1.3"},
-      {:gun, "~> 2.0", hex: :remedy_gun, override: true},
-      # {:gun, "~> 2.0"},
-      {:cowlib, "~> 2.11.1", hex: :remedy_cowlib, override: true},
-      # {:cowlib, "~> 2.11"},
       {:flex_logger, "~> 0.2"},
       {:logger_file_backend, "~> 0.0"},
       {:ex_doc, ">= 0.0.0", runtime: false, only: :dev},
