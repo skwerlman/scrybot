@@ -426,7 +426,9 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           |> validate(value)
 
         :cmc ->
-          is_number(value)
+          (&is_number/1)
+          |> nilable()
+          |> validate(value)
 
         :collector_number ->
           printable().(value)
@@ -568,7 +570,9 @@ defmodule Scrybot.Discord.Command.CardInfo.Card do
           value == "card"
 
         :oracle_id ->
-          uuid().(value)
+          uuid()
+          |> nilable()
+          |> validate(value)
 
         :oracle_text ->
           printable()
