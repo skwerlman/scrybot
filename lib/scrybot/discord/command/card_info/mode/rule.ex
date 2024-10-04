@@ -41,15 +41,16 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
       |> Enum.filter(filter)
 
     limit = Keyword.get(opts, :max, 10)
+    count = length(all_matches)
 
     matches =
-      if length(all_matches) > limit do
+      if count > limit do
         all_matches
         |> Enum.take(limit)
 
         send(
           Scrybot.Discord.FailureDispatcher,
-          {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
+          {:success, "Showing #{limit} of #{count} results", ctx}
         )
       else
         all_matches
