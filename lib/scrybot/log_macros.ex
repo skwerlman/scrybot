@@ -32,10 +32,19 @@ defmodule Scrybot.LogMacros do
     end
   end
 
+  defmacro warning(msg) do
+    quote do
+      _ =
+        Logger.warning(fn ->
+          [@logger_macro_logger_prefix___we_dont_want_name_collisions, unquote(msg)]
+        end)
+    end
+  end
+
   defmacro warn(msg) do
     quote do
       _ =
-        Logger.warn(fn ->
+        Logger.warning(fn ->
           [@logger_macro_logger_prefix___we_dont_want_name_collisions, unquote(msg)]
         end)
     end
