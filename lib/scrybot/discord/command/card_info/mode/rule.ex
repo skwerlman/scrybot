@@ -11,7 +11,11 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
     opts =
       for option <- options do
         case option do
-          {"max", max} ->
+          {"max", max} when is_binary(max) ->
+            {maxn, _} = Integer.parse(max)
+            {:max, maxn}
+
+          {"max", max} when is_integer(max) ->
             {:max, max}
 
           {name, val} ->
@@ -36,16 +40,20 @@ defmodule Scrybot.Discord.Command.CardInfo.Mode.Rule do
       rules
       |> Enum.filter(filter)
 
-    matches =
-      all_matches
-      |> Enum.take(Keyword.get(opts, :max, 10))
+    limit = Keyword.get(opts, :max, 10)
 
-    if matches != all_matches do
-      send(
-        Scrybot.Discord.FailureDispatcher,
-        {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
-      )
-    end
+    matches =
+      if length(all_matches) > limit do
+        all_matches
+        |> Enum.take(limit)
+
+        send(
+          Scrybot.Discord.FailureDispatcher,
+          {:success, "Showing #{length(matches)} of #{length(all_matches)} results", ctx}
+        )
+      else
+        all_matches
+      end
 
     {:ok, matches}
   end
